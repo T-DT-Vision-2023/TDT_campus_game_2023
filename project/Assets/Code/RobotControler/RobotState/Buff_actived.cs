@@ -1,6 +1,4 @@
-using Unity.Mathematics;
-using UnityEngine;
-using Random = UnityEngine.Random;
+
 namespace Code.RobotControler.RobotState
 {
     public class Buff_actived : RoboState

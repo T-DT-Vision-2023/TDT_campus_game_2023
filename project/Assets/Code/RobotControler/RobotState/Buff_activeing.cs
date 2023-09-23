@@ -1,5 +1,5 @@
-using Unity.Mathematics;
-using Unity.VisualScripting;
+using System;
+
 using UnityEngine;
 using Random = UnityEngine.Random;
 namespace Code.RobotControler.RobotState
@@ -11,7 +11,7 @@ namespace Code.RobotControler.RobotState
         private BuffControler buffcontroler;
         private float timecounter_fortarget=0.0f;
         private int active_num = 0;
-        
+
         public Buff_activeing(RoboControler r)
         {
             this.roboControler = r;
@@ -77,14 +77,14 @@ namespace Code.RobotControler.RobotState
                 float angle = Random.value * 0.265f + 0.75f;
                 float w = Random.value * 0.116f + 1.884f;
                 float b = 2.09f - angle;
-                float spd = angle * math.sin(w * buffcontroler.time_counter) + b;
+                float spd = angle * (float)Math.Sin(w * buffcontroler.time_counter) + b;
                 buffcontroler.time_counter += Time.deltaTime;
                 //这里有问题，理论上应该退出当前模式进入下一个模式
                 if (buffcontroler.time_counter>30)
                 {
                     buffcontroler.time_counter = 0;
                 }
-                buffcontroler.buff_base.Rotate(Vector3.left * Time.deltaTime * spd / math.PI * 180 * buffcontroler.rotationbalace);
+                buffcontroler.buff_base.Rotate(Vector3.left * Time.deltaTime * spd / (float)Math.PI * 180 * buffcontroler.rotationbalace);
             }
             
             //每隔一段时间选择一个新的符

@@ -1,7 +1,6 @@
 using Code.RobotControler.Senser;
 using UnityEngine;
-using System.Collections;
-using System.Collections.Generic;
+
 using Code.util;
 
 namespace Code.RobotControler.RobotState
