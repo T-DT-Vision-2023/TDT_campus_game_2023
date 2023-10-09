@@ -31,6 +31,7 @@ namespace Code.RobotControler.RobotState
                     Debug.LogError("点亮！！！！");
                     fan.enter_actived_mode();
                     active_num += 1;
+                    Debug.Log(active_num);
                 }
             }
             
@@ -102,6 +103,8 @@ namespace Code.RobotControler.RobotState
             if (timecounter_fortarget>5)
             {
                //取消所有装甲状态，然后新增一个状态
+
+               active_num = 0;
 
                foreach (FanControler fan in buffcontroler.bufffans)
                {
