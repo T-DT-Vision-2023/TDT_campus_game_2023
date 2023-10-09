@@ -21,14 +21,14 @@ namespace Code.RobotControler.RobotState
         public override void be_atacked()
         {
             
-            active_num = 0;
+            
             
             //直接点亮所有被激活的
             foreach (FanControler fan in this.buffcontroler.bufffans)
             {
                 if (fan.active_state==3)
-                {
-                    
+                {   
+                    Debug.LogError("点亮！！！！");
                     fan.enter_actived_mode();
                     active_num += 1;
                 }
@@ -36,8 +36,9 @@ namespace Code.RobotControler.RobotState
             
             //点亮所有的符要有一个提示！
             //TODO 等待后续代码
-            if (active_num==this.buffcontroler.bufffans.Length)
+            if (active_num>=this.buffcontroler.bufffans.Length)
             {
+                Debug.Log(this.buffcontroler.bufffans.Length);
                 Debug.LogWarning("all active!");
             }
             else
@@ -54,8 +55,11 @@ namespace Code.RobotControler.RobotState
                 {
                     temp_num = Random.Range(0, buffcontroler.bufffans.Length);
                     counter++;
-                    if (counter>=buffcontroler.bufffans.Length)
+                    if (counter>buffcontroler.bufffans.Length)
                     {
+                        
+                        Debug.LogError(this.buffcontroler.bufffans.Length);
+                        Debug.LogError(active_num);
                         Debug.LogError("算法出现错误！");
                         break;
                     }
