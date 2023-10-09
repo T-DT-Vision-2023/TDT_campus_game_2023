@@ -196,6 +196,7 @@ public class FanControler : MonoBehaviour
         
         public void turn_lightwatterlam_on()
         {
+            
             lightbar_waterlam.gameObject.GetComponent<Renderer>().material = materials[0];
            
         }
@@ -225,7 +226,7 @@ public class FanControler : MonoBehaviour
         public void enter_target_mode()
         {
             turn_all_off();
-            lightbar_waterlam.gameObject.SetActive(false);
+            lightbar_waterlam.gameObject.SetActive(true);
             lightbar_target.gameObject.SetActive(true);
             turn_lightbound_up_on();
             turn_lighttarget_on();

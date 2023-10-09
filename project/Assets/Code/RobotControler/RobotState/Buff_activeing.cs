@@ -51,7 +51,9 @@ namespace Code.RobotControler.RobotState
                 //随机选择一个状态扇叶激活
                 
                 int temp_num = Random.Range(0, buffcontroler.bufffans.Length);
-                int counter = 1;
+                int counter = 0;
+                
+                //这个地方逻辑有问题
                 while (buffcontroler.bufffans[temp_num].active_state!=0)
                 {
                     temp_num = Random.Range(0, buffcontroler.bufffans.Length);
@@ -62,10 +64,15 @@ namespace Code.RobotControler.RobotState
                         Debug.LogError(this.buffcontroler.bufffans.Length);
                         Debug.LogError(active_num);
                         Debug.LogError("算法出现错误！");
-                        break;
+                        Debug.LogError(temp_num);
+                        Debug.LogError(buffcontroler.bufffans[temp_num].active_state);
+                        counter = 0;
+                     
                     }
 
                 }
+                
+                Debug.LogError("当前选中的扇叶"+temp_num);
                 buffcontroler.bufffans[temp_num].active_state = 1;
                 buffcontroler.bufffans[temp_num].enter_target_mode();
             }
