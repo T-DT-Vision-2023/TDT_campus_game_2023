@@ -6,6 +6,7 @@ using UnityEngine;
 
 using NetMQ;
 using NetMQ.Sockets;
+using Unity.VisualScripting;
 using UnityEngine.Rendering;
 
 /*
@@ -16,8 +17,8 @@ public class GameManageer : MonoBehaviour
     public int port = 5559; // ZeroMQ端口号
     public int width = 1440; // 图像宽度
     public int height = 1080; // 图像高度
-            
-  
+
+    public GameManageer test_manager  ;
 
     private byte[] imgData;
     public bool trans_frame = false; 
@@ -28,9 +29,13 @@ public class GameManageer : MonoBehaviour
 
     private void Awake()
     {
+       
+        
         resultTexture = new Texture2D(targetTexture.width, targetTexture.height, TextureFormat.RGBA32, false);
     }
     void Start() {
+        
+        
         //设置屏幕大小：
         Screen.SetResolution(width, height, false);
 

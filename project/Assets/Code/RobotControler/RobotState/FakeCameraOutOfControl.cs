@@ -15,6 +15,7 @@ namespace Code.RobotControler.RobotState
         private float xRotation = 0.0f;
         private float yRotation = 0.0f;
         public FakeCamera camera;
+        
         GameObject bullet = Resources.Load<GameObject>("model/bullet_prefab");
 
         public FakeCameraOutOfControl(FakeCamera f)
@@ -63,6 +64,7 @@ namespace Code.RobotControler.RobotState
                 }
                 
                 if (Input.GetMouseButtonDown(1)) {
+                    
                     //寻找当前物体的父亲物体，并且拿到其中的controler最后进入下一个状态
                     Transform grandpa = UtilsForGameobject.get_granfather(objectTransform);
                     if (objectTransform==null)

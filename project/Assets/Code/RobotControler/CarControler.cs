@@ -2,11 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Code.RobotControler;
+using Code.RobotControler.RobotState;
 using Code.util;
 using UnityEngine;
 
 public class CarControler : RoboControler
 {   
+
+    
+    public int car_defalt_state = 0;
     
     
     public WheelCollider[] wheelColliders;
@@ -42,7 +46,7 @@ public class CarControler : RoboControler
     private float Angle = 0.0f;
 
 
-    private RoboState State = null;
+ 
     
     private void Start()
     {
@@ -74,6 +78,25 @@ public class CarControler : RoboControler
             
 
         }
+
+        switch (this.car_defalt_state)
+        {
+            
+            case 0 :
+                break;
+            
+            case 1:
+                
+                print("初始化车辆自旋状态");
+                
+                RoboState temp = new Car_auto_rotation_state(this);
+                
+                change_state(temp);
+                
+                break;
+        }
+        
+        
         
      
         
@@ -83,23 +106,12 @@ public class CarControler : RoboControler
     void Update()
     {
         
-        /*
-        rotationInput = 0f;
-        
-
-        float rotation_input = 60;
-
-        
-        if (Input.GetKey(KeyCode.Q))
+        if (state!=null)
         {
-            rotationInput += rotationSpeed;
+            state.On_update();
         }
-        if (Input.GetKey(KeyCode.E))
-        {
-            rotationInput -= rotationSpeed;
-        }
-        */
       
+        
     }
 
     public Vector3  get_head_position()
@@ -269,7 +281,7 @@ public class CarControler : RoboControler
         
         this.head.localRotation = rotation_head;
         this.neck.localRotation = rotation_neck;
-        chassis.localRotation = rotation_chassis;
+        //chassis.localRotation = rotation_chassis;
         
 
 
@@ -281,6 +293,7 @@ public class CarControler : RoboControler
     public override void change_state(RoboState state)
     {   
         state.quite_state();
+
         this.state = state;
         this.state.enter_state();
     }

@@ -14,10 +14,7 @@ namespace Code.RobotControler.RobotState
         private float yRotation = 0.0f;
         public FakeCamera camera;
         public float speed = 5.0f;
-        
-        //用于退出控制状态
-        private int quit_count = 0;
-        private float quit_time_counter = 0.0f;
+
         
         public FackCameraInControl(FakeCamera f)
         {
@@ -64,9 +61,19 @@ namespace Code.RobotControler.RobotState
             //    this.camera.car.camera_y, this.camera.car.camera_z);
             
             // this.camera.transform.position = position;
+            
+            //按下l退出状态
             if (Input.GetKeyDown("l"))
             {
+
+                CameraState new_state = new FakeCameraOutOfControl(this.camera);
                 
+                new_state.enter_state();
+                
+                this.camera.change_state(new_state);
+                
+                
+
             }
 
         }
@@ -76,8 +83,7 @@ namespace Code.RobotControler.RobotState
 
             this.camera.key_message = "";
 
-
-
+            
         }
 
         public override void quite_state()

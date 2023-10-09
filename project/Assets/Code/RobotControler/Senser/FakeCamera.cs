@@ -2,17 +2,18 @@ using System;
 using Code.RobotControler.RobotState;
 using Unity.VisualScripting;
 using UnityEngine;
-using State = Code.RobotControler.RobotState.CameraState;
+
 
 namespace Code.RobotControler.Senser
 {
     //理论上来说现在应该有图传和视觉相机两种
+    //这里认为相机的状态和机器人应该分开
     public class FakeCamera : MonoBehaviour
     {
 
         public CarControler car=null;
 
-        public State camera_state = null;
+        public CameraState camera_state = null;
         
         public string key_message = "";
         //应该有两个状态，一个是没有控制车的时候，一个是已经控制车的时候
@@ -42,6 +43,16 @@ namespace Code.RobotControler.Senser
             
          
         }
+        
+        public void change_state( CameraState state)
+        {
+            state.quite_state();
+            this.camera_state = state;
+            this.camera_state.enter_state();
+        }
+
+     
+
         
         
     }

@@ -9,14 +9,26 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+#
 
-/Library
 
-/Logs
+Library/
 
-/Temp
+.idea/
 
-/.idea
+Logs/
+
+Temp/
+
+obj/
+
+
+#
+# /Logs
+#
+# /Temp
+#
+# /.idea
 
 
 # MemoryCaptures can get excessive in size.
