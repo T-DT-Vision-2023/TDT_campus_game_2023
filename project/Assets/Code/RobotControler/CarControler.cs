@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using Code.RobotControler;
 using Code.RobotControler.RobotState;
+using Code.RobotControler.Senser;
 using Code.util;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class CarControler : RoboControler
@@ -14,7 +16,11 @@ public class CarControler : RoboControler
     
     
     public WheelCollider[] wheelColliders;
-    public Transform[] wheelMeshes;
+    public Transform true_wheel;
+    public List<Transform> armors;
+    public Transform health_bar;
+    public HealthBar Healthbar_controler;
+    
     public float motorTorque = 1f;
     public float rotationSpeed = 5f;
     public float forwardExtremumSlip = 0.4f;
@@ -45,6 +51,10 @@ public class CarControler : RoboControler
     private float rotationInput;
     private float Angle = 0.0f;
 
+    public int little_bullet_damage = 10;
+
+    
+
 
  
     
@@ -71,14 +81,25 @@ public class CarControler : RoboControler
             
             wheelColliders[i].forwardFriction = forwardFriction;
             wheelColliders[i].sidewaysFriction = sidewayFriction;
-          
-            head = UtilsForGameobject.getallChildren_by_keyword(this.transform, "head")[0];
-            neck = UtilsForGameobject.getallChildren_by_keyword(this.transform, "neck")[0];
-            chassis = UtilsForGameobject.getallChildren_by_keyword(this.transform, "fuck")[0];
-            
+                
+
 
         }
 
+        head = UtilsForGameobject.getallChildren_by_keyword(this.transform, "head")[0];
+        neck = UtilsForGameobject.getallChildren_by_keyword(this.transform, "neck")[0];
+        chassis = UtilsForGameobject.getallChildren_by_keyword(this.transform, "fuck")[0];
+        armors = UtilsForGameobject.getallChildren_by_keyword(this.transform, "armor");
+
+        foreach (Transform armor in armors)
+        {
+            armor.AddComponent<ArmorSenser>();
+        }
+
+        Healthbar_controler = health_bar.GetComponent<HealthBar>();
+        Healthbar_controler.SetMaxHealth((int)blood);
+
+        
         switch (this.car_defalt_state)
         {
             
@@ -286,9 +307,16 @@ public class CarControler : RoboControler
 
 
     }
-    
-    
 
+
+    public void change_blood(int value)
+    {
+        this.blood += value;
+        Healthbar_controler.SetHealth((int)this.blood);
+    }
+    
+    
+    
 
     public override void change_state(RoboState state)
     {   

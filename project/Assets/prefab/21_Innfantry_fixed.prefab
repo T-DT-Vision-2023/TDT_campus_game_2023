@@ -115,7 +115,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 619593327822310490}
+  - {fileID: 4170400973435781299}
   - {fileID: 291744542441404376}
   - {fileID: 7548828328164181859}
   - {fileID: 924036392327555430}
@@ -418,7 +418,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 619593327822310490}
+  m_Father: {fileID: 4170400973435781299}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1354247934060075094
@@ -745,7 +745,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 619593327822310490}
+  - component: {fileID: 4170400973435781299}
   - component: {fileID: 8206714110953483254}
   - component: {fileID: 5727239748079731465}
   - component: {fileID: 619593327822310491}
@@ -756,15 +756,15 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &619593327822310490
-Transform:
+--- !u!224 &4170400973435781299
+RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1731311705547745938}
   m_LocalRotation: {x: 0.092296064, y: -0.70105743, z: 0.70105743, w: 0.092296064}
-  m_LocalPosition: {x: 0.18019608, y: 0.0064796936, z: -0.021120738}
+  m_LocalPosition: {x: 0, y: 0, z: -0.021120738}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -773,6 +773,11 @@ Transform:
   m_Father: {fileID: 4268825144135264241}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0.18019608, y: 0.0064796936}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!33 &8206714110953483254
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1255,7 +1260,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 619593327822310490}
+  m_Father: {fileID: 4170400973435781299}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3206648310675355362
@@ -2272,6 +2277,7 @@ MonoBehaviour:
   blood: 0
   controler_transform: {fileID: 0}
   fackcamera: {fileID: 0}
+  car_defalt_state: 0
   wheelColliders:
   - {fileID: 8497263689216214076}
   - {fileID: 8497263689065357988}
