@@ -3,126 +3,169 @@ using System.Collections;
 using System.Collections.Generic;
 using Code.util;
 using UnityEngine;
-
 using NetMQ;
 using NetMQ.Sockets;
 using Unity.VisualScripting;
 using UnityEngine.Rendering;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.Threading;
 
-/*
- * 同样用于进行视频传输
- */
-public class GameManageer : MonoBehaviour
+
+namespace Network
 {
-    public int port = 5559; // ZeroMQ端口号
-    public int width = 1440; // 图像宽度
-    public int height = 1080; // 图像高度
-
-    public GameManageer test_manager  ;
-
-    private byte[] imgData;
-    public bool trans_frame = false; 
-    
-    public RenderTexture targetTexture; // 设置为相机的目标纹理
-
-    private Texture2D resultTexture;
-
-    private void Awake()
+    public class RecvStruct
     {
-       
-        
-        resultTexture = new Texture2D(targetTexture.width, targetTexture.height, TextureFormat.RGBA32, false);
+        public double Yaw { get; set; }
+        public double Pitch { get; set; }
+        public int Shoot { get; set; }
+        public double TimeStamp { get; set; }
+        public int RequiredImageWidth { get; set; }
+        public int RequiredImageHeight { get; set; }
     }
-    void Start() {
-        
-        
-        //设置屏幕大小：
-        Screen.SetResolution(width, height, false);
 
-        // 创建ZeroMQ的PUSH套接字
-        PushSocket pushSocket = new PushSocket();
-        pushSocket.Bind($"tcp://*:{port}");
-        // 开始协程，循环发送图像数据
-        StartCoroutine(SendImage(pushSocket));
-    }
-    private void Update()
+    public class SendStruct
     {
-        // 异步复制目标纹理的数据到系统内存中
-        //AsyncGPUReadback.Request(targetTexture, 0, TextureFormat.RGBA32, OnCompleteReadback);
+        public double Yaw { get; set; }
+        public double Pitch { get; set; }
+        public byte[] Img { get; set; }
+        public double TimeStamp { get; set; }
+        public double EnemyHp { get; set; }
+        public double MyHp { get; set; }
+        public int RestBullets { get; set; }
+        public int RestTime { get; set; }
+        public int BuffOverTime { get; set; }
     }
-    
 
-    private void OnCompleteReadback(AsyncGPUReadbackRequest request)
+    public class NetworkManager : MonoBehaviour
     {
-        if (request.hasError)
+        public string ClientIP = "localhost";
+        public int ClientPort = 5559;
+        public int ServerPort = 5558;
+        // momo: 这里一律使用Client指代C++客户端，Server指代Unity服务端喵
+
+        private string serverAddress;
+        private PushSocket pushSocket;
+        private PullSocket pullSocket;
+        private Thread receiveThread;
+        private bool isRunning = true;
+        private DateTime lastPulseReceivedTime;
+
+
+        private RecvStruct receivedData = new();
+        private SendStruct sendData = new();
+
+        public RecvStruct GetReceivedData()
         {
-            Debug.Log("GPU readback error detected.");
-            return;
+            return receivedData;
         }
 
-        // 将读取到的数据保存到结果纹理中
-        resultTexture.LoadRawTextureData(request.GetData<uint>());
-        resultTexture.Apply();
-        
-
-        // 在此处可以将结果纹理传递给C++程序进行分析
-        // ...
-
-        // 释放请求的资源
-        //request.Dispose();
-    }
-  
-
-    IEnumerator SendImage(PushSocket pushSocket) {
-        while (true)
+        public void SetReceivedData(RecvStruct data)
         {
-            if (trans_frame)
+            receivedData = data;
+        }
+
+        public SendStruct GetSendData()
+        {
+            return sendData;
+        }
+
+        public void SetSendData(SendStruct data)
+        {
+            sendData = data;
+        }
+
+        private void Start()
+        {
+            serverAddress = $"tcp://{ClientIP}:{ClientPort}";
+            pushSocket = new PushSocket();
+            pushSocket.Bind($"tcp://*:{ServerPort}");
+
+            pullSocket = new PullSocket();
+            pullSocket.Connect(serverAddress);
+
+            receiveThread = new Thread(ReceiveMessages);
+            receiveThread.Start();
+        }
+
+        private void ReceiveMessages()
+        {
+            while (isRunning)
             {
-                // 从屏幕输出中捕获图像
-                
-              
-                Texture2D screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
-               
-              
-                imgData = screenCapture.EncodeToJPG();
+                if (pullSocket.TryReceiveFrameString(out var header))
+                {
+                    if (header == "msg")
+                    {
+                        if (pullSocket.TryReceiveFrameString(out var message)) HandleMessage(message);
+                    }
+                    else if (header == "data")
+                    {
+                        if (pullSocket.TryReceiveFrameString(out var data)) HandleData(data);
+                    }
+                }
 
-                // 发送图像数据
-                pushSocket.TrySendFrame(imgData);
-        
-                Destroy(screenCapture);
-                
+                if ((DateTime.Now - lastPulseReceivedTime).TotalSeconds > 5) // 5秒未收到心跳包
+                {
+                    Debug.Log("未接收到心跳包，客户端可能离线捏");
+                    break; // 退出接收线程
+                }
             }
-            yield return null;
-            //yield return new WaitForSeconds(0.01f);
         }
-    }
 
-    public void send_test()
-    {
-        Debug.Log("wtf???");
-    }
 
-   
-
-    private void OnGUI()
-    {
-        /*GUI.DrawTexture(new Rect(0, 0, width, height), tex);*/
-    }
-    /*void Start() {
-        StartCoroutine(MyCoroutineFunction());
-    }
-
-    IEnumerator MyCoroutineFunction() {
-        while (true)
+        private void HandleMessage(string message)
         {
-            Debug.Log("Coroutine started");
-
-            yield return new WaitForSeconds(1);   
-            
-            Debug.Log("Coroutine ended");
+            var json = JsonConvert.DeserializeObject<JObject>(message);
+            if (json["type"]?.ToString() == "register")
+                Debug.Log("Register success");
+            else if (json["msg"]?.ToString() == "offline")
+                Debug.Log("Client offline");
+            else if (json["msg"]?.ToString() == "pulse")
+                lastPulseReceivedTime = DateTime.Now; // 更新上一次接收到心跳包的时间
         }
-  
 
-       
-    }*/
+
+        private void HandleData(string data)
+        {
+            var json = JsonConvert.DeserializeObject<JObject>(data);
+            receivedData.Yaw = (double)json["yaw"];
+            receivedData.Pitch = (double)json["pitch"];
+            receivedData.Shoot = (int)json["shoot"];
+            receivedData.TimeStamp = (double)json["time_stamp"];
+            receivedData.RequiredImageWidth = (int)json["required_image_width"];
+            receivedData.RequiredImageHeight = (int)json["required_image_height"];
+        }
+
+        public void SendMessage(SendStruct data)
+        {
+            var json = new JObject
+            {
+                ["yaw"] = sendData.Yaw,
+                ["pitch"] = sendData.Pitch,
+                ["time_stamp"] = sendData.TimeStamp,
+                ["enemy_hp"] = sendData.EnemyHp,
+                ["my_hp"] = sendData.MyHp,
+                ["rest_bullets"] = sendData.RestBullets,
+                ["rest_time"] = sendData.RestTime,
+                ["buff_over_time"] = sendData.BuffOverTime
+            };
+
+            if (sendData.Img != null && sendData.Img.Length > 0)
+                json["img"] = Convert.ToBase64String(sendData.Img);
+
+            var message = json.ToString();
+            pushSocket.SendFrame("data", true);
+            pushSocket.SendFrame(message);
+        }
+
+
+        private void OnDestroy()
+        {
+            isRunning = false;
+            receiveThread.Join();
+            pushSocket.Close();
+            pullSocket.Close();
+            NetMQConfig.Cleanup();
+        }
+    }
 }
