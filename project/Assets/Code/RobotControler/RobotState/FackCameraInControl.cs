@@ -14,6 +14,7 @@ namespace Code.RobotControler.RobotState
         private float yRotation = 0.0f;
         public FakeCamera camera;
         public float speed = 5.0f;
+        GameObject bullet = Resources.Load<GameObject>("model/bullet_prefab");
 
         
         public FackCameraInControl(FakeCamera f)
@@ -74,6 +75,12 @@ namespace Code.RobotControler.RobotState
                 
                 
 
+            }
+            if (Input.GetMouseButtonDown(0))
+            {
+                GameObject temp_bullet=Transform.Instantiate(this.bullet,this.camera.transform.position,this.camera.transform.rotation);
+                temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward*28.0f;
+                UnityEngine.GameObject.Destroy(temp_bullet,5);
             }
 
         }
