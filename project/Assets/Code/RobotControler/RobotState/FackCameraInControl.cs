@@ -15,6 +15,8 @@ namespace Code.RobotControler.RobotState
         public FakeCamera camera;
         public float speed = 5.0f;
         GameObject bullet = Resources.Load<GameObject>("model/bullet_prefab");
+        public float shoot_time = 0.0f;
+        public float shoot_time_interval = 0.333f;
 
         
         public FackCameraInControl(FakeCamera f)
@@ -72,15 +74,20 @@ namespace Code.RobotControler.RobotState
                 new_state.enter_state();
                 
                 this.camera.change_state(new_state);
-                
-                
 
             }
+            this.shoot_time += Time.deltaTime;
             if (Input.GetMouseButtonDown(0))
             {
-                GameObject temp_bullet=Transform.Instantiate(this.bullet,this.camera.transform.position,this.camera.transform.rotation);
-                temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward*28.0f;
-                UnityEngine.GameObject.Destroy(temp_bullet,5);
+                if (this.shoot_time > this.shoot_time_interval)
+                {
+                    Debug.Log(shoot_time);
+                    this.shoot_time = 0.0f;
+                    GameObject temp_bullet=Transform.Instantiate(this.bullet,this.camera.transform.position,this.camera.transform.rotation);
+                    temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward*28.0f;
+                    UnityEngine.GameObject.Destroy(temp_bullet,5);
+                }
+
             }
 
         }
