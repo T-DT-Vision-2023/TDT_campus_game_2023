@@ -49,6 +49,7 @@ namespace Network
         private PullSocket pullSocket;
         private Thread receiveThread;
         private bool isRunning = true;
+        private bool trans_frame = true;
         private DateTime lastPulseReceivedTime;
 
 
@@ -86,6 +87,7 @@ namespace Network
 
             receiveThread = new Thread(ReceiveMessages);
             receiveThread.Start();
+            StartCoroutine(CaptureAndSendImage());
         }
 
         private void ReceiveMessages()
@@ -134,6 +136,29 @@ namespace Network
             receivedData.TimeStamp = (double)json["time_stamp"];
             receivedData.RequiredImageWidth = (int)json["required_image_width"];
             receivedData.RequiredImageHeight = (int)json["required_image_height"];
+        }
+
+        private IEnumerator CaptureAndSendImage()
+        {
+            while (true)
+            {
+                if (trans_frame)
+                {
+                    var screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
+                    var imgData = screenCapture.EncodeToJPG();
+                    Destroy(screenCapture);
+
+
+                    var sendStruct = GetSendData();
+                    sendStruct.Img = imgData;
+
+
+                    SetSendData(sendStruct);
+                }
+
+                yield return null;
+                // 这里可以使用 yield return new WaitForSeconds(0.01f) 来控制获取图像的频率
+            }
         }
 
         public void SendMessage(SendStruct data)
