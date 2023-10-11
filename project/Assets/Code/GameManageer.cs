@@ -118,12 +118,27 @@ namespace Network
         private void HandleMessage(string message)
         {
             var json = JsonConvert.DeserializeObject<JObject>(message);
+
             if (json["type"]?.ToString() == "register")
-                Debug.Log("Register success");
-            else if (json["msg"]?.ToString() == "offline")
-                Debug.Log("Client offline");
-            else if (json["msg"]?.ToString() == "pulse")
+            {
+                Debug.Log("Register success~");
+
+                var responseJson = "{\"type\":\"register success\"}";
+                pushSocket.SendFrame("msg", true);
+                pushSocket.SendFrame(responseJson);
+            }
+            else if (json["type"]?.ToString() == "offline")
+            {
+                Debug.Log("Client offline~");
+
+                var responseJson = "{\"type\":\"offline success\"}";
+                pushSocket.SendFrame("msg", true);
+                pushSocket.SendFrame(responseJson);
+            }
+            else if (json["type"]?.ToString() == "pulse")
+            {
                 lastPulseReceivedTime = DateTime.Now; // 更新上一次接收到心跳包的时间
+            }
         }
 
 
