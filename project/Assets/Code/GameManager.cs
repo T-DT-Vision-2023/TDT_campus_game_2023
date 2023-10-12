@@ -37,18 +37,23 @@ namespace Network
         public int BuffOverTime { get; set; }
     }
 
-    public class NetworkManager : MonoBehaviour
+    public class GameManager : MonoBehaviour
     {
-        public string ClientIP = "localhost";
+        public string ClientIP = "127.0.0.1";
         public int ClientPort = 5559;
         public int ServerPort = 5558;
         // momo: 这里一律使用Client指代C++客户端，Server指代Unity服务端喵
 
-        private string serverAddress;
+        public int width = 1440;
+        public int height = 1080;
+
+        private string clientAddress;
         private PushSocket pushSocket;
         private PullSocket pullSocket;
         private Thread receiveThread;
-        private bool isRunning = true;
+        private Thread sendThread;
+        private bool recv_msg = true;
+        private bool send_msg = true;
         private bool trans_frame = true;
         private DateTime lastPulseReceivedTime;
 
@@ -78,21 +83,29 @@ namespace Network
 
         private void Start()
         {
-            serverAddress = $"tcp://{ClientIP}:{ClientPort}";
+            Debug.Log("NetworkManager Start 没有输出？？？？");
+            Screen.SetResolution(width, height, false);
+
+            clientAddress = $"tcp://{ClientIP}:{ClientPort}";
             pushSocket = new PushSocket();
+            pushSocket.Options.SendHighWatermark = 3500;
             pushSocket.Bind($"tcp://*:{ServerPort}");
 
             pullSocket = new PullSocket();
-            pullSocket.Connect(serverAddress);
+            pullSocket.Options.ReceiveHighWatermark = 3500;
+            pullSocket.Connect(clientAddress);
 
             receiveThread = new Thread(ReceiveMessages);
             receiveThread.Start();
+            sendThread = new Thread(SendMessage);
+            sendThread.Start();
+
             StartCoroutine(CaptureAndSendImage());
         }
 
         private void ReceiveMessages()
         {
-            while (isRunning)
+            while (recv_msg)
             {
                 if (pullSocket.TryReceiveFrameString(out var header))
                 {
@@ -163,10 +176,8 @@ namespace Network
                     var imgData = screenCapture.EncodeToJPG();
                     Destroy(screenCapture);
 
-
                     var sendStruct = GetSendData();
                     sendStruct.Img = imgData;
-
 
                     SetSendData(sendStruct);
                 }
@@ -176,33 +187,42 @@ namespace Network
             }
         }
 
-        public void SendMessage(SendStruct data)
+        public void SendMessage()
         {
-            var json = new JObject
+            while (send_msg)
             {
-                ["yaw"] = sendData.Yaw,
-                ["pitch"] = sendData.Pitch,
-                ["time_stamp"] = sendData.TimeStamp,
-                ["enemy_hp"] = sendData.EnemyHp,
-                ["my_hp"] = sendData.MyHp,
-                ["rest_bullets"] = sendData.RestBullets,
-                ["rest_time"] = sendData.RestTime,
-                ["buff_over_time"] = sendData.BuffOverTime
-            };
+                var json = new JObject
+                {
+                    ["yaw"] = sendData.Yaw,
+                    ["pitch"] = sendData.Pitch,
+                    ["time_stamp"] = sendData.TimeStamp,
+                    ["enemy_hp"] = sendData.EnemyHp,
+                    ["my_hp"] = sendData.MyHp,
+                    ["rest_bullets"] = sendData.RestBullets,
+                    ["rest_time"] = sendData.RestTime,
+                    ["buff_over_time"] = sendData.BuffOverTime
+                };
 
-            if (sendData.Img != null && sendData.Img.Length > 0)
-                json["img"] = Convert.ToBase64String(sendData.Img);
+                if (sendData.Img != null && sendData.Img.Length > 0)
+                    json["img"] = Convert.ToBase64String(sendData.Img);
 
-            var message = json.ToString();
-            pushSocket.SendFrame("data", true);
-            pushSocket.SendFrame(message);
+                var message = json.ToString();
+                pushSocket.SendFrame("data", true);
+                pushSocket.SendFrame(message);
+
+                Thread.Sleep(1000); // 每秒发送一次，您可以根据需要调整这个值
+            }
         }
 
 
         private void OnDestroy()
         {
-            isRunning = false;
-            receiveThread.Join();
+            send_msg = false;
+            recv_msg = false;
+            if (sendThread != null && sendThread.IsAlive)
+                sendThread.Join();
+            if (receiveThread != null && receiveThread.IsAlive)
+                receiveThread.Join();
             pushSocket.Close();
             pullSocket.Close();
             NetMQConfig.Cleanup();
