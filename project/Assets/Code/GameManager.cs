@@ -39,7 +39,7 @@ namespace Network
 
     public class GameManager : MonoBehaviour
     {
-        public string ClientIP = "127.0.0.1";
+        public string ClientIP = "localhost";
         public int ClientPort = 5559;
         public int ServerPort = 5558;
         // momo: 这里一律使用Client指代C++客户端，Server指代Unity服务端喵
@@ -55,6 +55,7 @@ namespace Network
         private bool recv_msg = true;
         private bool send_msg = true;
         private bool trans_frame = true;
+        private bool is_registered = false;
         private DateTime lastPulseReceivedTime;
 
 
@@ -86,19 +87,17 @@ namespace Network
             Debug.Log("NetworkManager Start 没有输出？？？？");
             Screen.SetResolution(width, height, false);
 
-            clientAddress = $"tcp://{ClientIP}:{ClientPort}";
             pushSocket = new PushSocket();
-            pushSocket.Options.SendHighWatermark = 3500;
+            pushSocket.Options.SendHighWatermark = 1500;
             pushSocket.Bind($"tcp://*:{ServerPort}");
 
+            clientAddress = $"tcp://{ClientIP}:{ClientPort}";
             pullSocket = new PullSocket();
-            pullSocket.Options.ReceiveHighWatermark = 3500;
+            pullSocket.Options.ReceiveHighWatermark = 1500;
             pullSocket.Connect(clientAddress);
 
             receiveThread = new Thread(ReceiveMessages);
             receiveThread.Start();
-            sendThread = new Thread(SendMessage);
-            sendThread.Start();
 
             StartCoroutine(CaptureAndSendImage());
         }
@@ -109,21 +108,34 @@ namespace Network
             {
                 if (pullSocket.TryReceiveFrameString(out var header))
                 {
-                    if (header == "msg")
+                    Debug.Log($"Received message: {header}");
+
+                    switch (header)
                     {
-                        if (pullSocket.TryReceiveFrameString(out var message)) HandleMessage(message);
-                    }
-                    else if (header == "data")
-                    {
-                        if (pullSocket.TryReceiveFrameString(out var data)) HandleData(data);
+                        case "msg":
+                        {
+                            if (pullSocket.TryReceiveFrameString(out var message)) HandleMessage(message);
+                            break;
+                        }
+                        case "data":
+                        {
+                            if (pullSocket.TryReceiveFrameString(out var data)) HandleData(data);
+                            break;
+                        }
                     }
                 }
 
-                if ((DateTime.Now - lastPulseReceivedTime).TotalSeconds > 5) // 5秒未收到心跳包
+                if (!is_registered)
                 {
-                    Debug.Log("未接收到心跳包，客户端可能离线捏");
-                    break; // 退出接收线程
+                    Debug.Log("未注册，等待客户端注册喵");
+                    Thread.Sleep(1000);
+                    continue;
                 }
+
+                if (!((DateTime.Now - lastPulseReceivedTime).TotalSeconds > 5)) return; // 5秒未收到心跳包
+                Debug.Log("未接收到心跳包，客户端可能离线捏");
+                Thread.Sleep(1000);
+                Debug.Log("尝试重新连接客户端喵");
             }
         }
 
@@ -132,25 +144,33 @@ namespace Network
         {
             var json = JsonConvert.DeserializeObject<JObject>(message);
 
-            if (json["type"]?.ToString() == "register")
+            switch (json["type"]?.ToString())
             {
-                Debug.Log("Register success~");
+                case "register":
+                {
+                    Debug.Log("Register success~");
 
-                var responseJson = "{\"type\":\"register success\"}";
-                pushSocket.SendFrame("msg", true);
-                pushSocket.SendFrame(responseJson);
-            }
-            else if (json["type"]?.ToString() == "offline")
-            {
-                Debug.Log("Client offline~");
+                    is_registered = true;
+                    sendThread = new Thread(SendMessage);
+                    sendThread.Start();
 
-                var responseJson = "{\"type\":\"offline success\"}";
-                pushSocket.SendFrame("msg", true);
-                pushSocket.SendFrame(responseJson);
-            }
-            else if (json["type"]?.ToString() == "pulse")
-            {
-                lastPulseReceivedTime = DateTime.Now; // 更新上一次接收到心跳包的时间
+                    var responseJson = "{\"type\":\"register success\"}";
+                    pushSocket.SendFrame("msg", true);
+                    pushSocket.SendFrame(responseJson);
+                    break;
+                }
+                case "offline":
+                {
+                    Debug.Log("Client offline~");
+
+                    var responseJson = "{\"type\":\"offline success\"}";
+                    pushSocket.SendFrame("msg", true);
+                    pushSocket.SendFrame(responseJson);
+                    break;
+                }
+                case "pulse":
+                    lastPulseReceivedTime = DateTime.Now; // 更新上一次接收到心跳包的时间
+                    break;
             }
         }
 
@@ -209,8 +229,6 @@ namespace Network
                 var message = json.ToString();
                 pushSocket.SendFrame("data", true);
                 pushSocket.SendFrame(message);
-
-                Thread.Sleep(1000); // 每秒发送一次，您可以根据需要调整这个值
             }
         }
 
