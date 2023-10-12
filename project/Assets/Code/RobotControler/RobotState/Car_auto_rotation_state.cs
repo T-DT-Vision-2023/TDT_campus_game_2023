@@ -1,4 +1,5 @@
 using Code.RobotControler.Senser;
+using Unity.VisualScripting.FullSerializer.Internal;
 using UnityEngine;
 
 namespace Code.RobotControler.RobotState
@@ -33,6 +34,8 @@ namespace Code.RobotControler.RobotState
         public float time_counter = 0f;
 
         public float move_speed = 0.5f;
+        public float yaw=0.0f;
+        public float pitch=0.0f;
 
         public Car_auto_rotation_state(CarControler controler)
         {
@@ -46,6 +49,7 @@ namespace Code.RobotControler.RobotState
 
         public override void On_update()
         {
+
             time_counter += Time.deltaTime;
             if(Input.GetKey("1"))
             {
@@ -72,6 +76,38 @@ namespace Code.RobotControler.RobotState
                 Move(MoveCommands.ROTATE_RIGHT);
             }
 
+            if (Input.GetKey("7"))
+            {
+                yaw += 1;
+            }
+
+            if (Input.GetKey("8"))
+            {
+                yaw -= 1;
+            }
+            if (Input.GetKey("o"))
+            {
+                pitch += 1;
+            }
+
+            if (Input.GetKey("p"))
+            {
+                pitch -= 1;
+            }
+
+            if (Input.GetKey("x"))
+            {
+                this._controler.act_mousex_mousey(0,10);
+            }
+
+            if (Input.GetKey("r"))
+            {
+                this._controler.Reset_Rotation();
+            }
+
+            // Move2yaw_pitch(yaw, pitch);
+
+
         }
 
         public override void enter_state()
@@ -80,6 +116,7 @@ namespace Code.RobotControler.RobotState
             {
                 armor.GetComponent<ArmorSenser>().OnBulletHit.AddListener(this._controler.state.be_atacked);
             }
+            this._controler.Reset_Rotation();
         }
 
         public override void quite_state()
@@ -109,6 +146,14 @@ namespace Code.RobotControler.RobotState
                    _controler.chassis.Rotate(Vector3.down*Time.deltaTime*rotation_speed);
                    break;
             }
+        }
+
+        public void Move2yaw_pitch(float yaw, float pitch)
+        {
+            this._controler.act_mousex_mousey(150,0);
+
+
+
         }
 
     }

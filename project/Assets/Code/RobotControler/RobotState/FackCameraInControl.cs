@@ -66,6 +66,24 @@ namespace Code.RobotControler.RobotState
             // this.camera.transform.position = position;
             
             //按下l退出状态
+            if(Input.GetKeyDown("u"))
+            {
+                if (this.camera.car != null)
+                {
+                    RoboState newstate = new Car_auto_rotation_state(this.camera.car);
+                    // newstate.enter_state();
+                    this.camera.car.change_state(newstate);
+                }
+            }
+            if(Input.GetKeyDown("i"))
+            {
+                if (this.camera.car != null)
+                {
+                    RoboState newstate = new Car_gaming_state(this.camera.car);
+                    // newstate.enter_state();
+                    this.camera.car.change_state(newstate);
+                }
+            }
             if (Input.GetKeyDown("l"))
             {
 

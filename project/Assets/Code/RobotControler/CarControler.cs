@@ -100,22 +100,22 @@ public class CarControler : RoboControler
         Healthbar_controler.SetMaxHealth((int)blood);
 
         
-        switch (this.car_defalt_state)
-        {
-            
-            case 0 :
-                break;
-            
-            case 1:
-                
-                print("初始化车辆自旋状态");
-                
-                RoboState temp = new Car_auto_rotation_state(this);
-                
-                change_state(temp);
-                
-                break;
-        }
+        // switch (this.car_defalt_state)
+        // {
+        //
+        //     case 0 :
+        //         break;
+        //
+        //     case 1:
+        //
+        //         print("初始化车辆自旋状态");
+        //
+        //         RoboState temp = new Car_auto_rotation_state(this);
+        //
+        //         change_state(temp);
+        //
+        //         break;
+        // }
         
         
         
@@ -306,6 +306,19 @@ public class CarControler : RoboControler
         
 
 
+    }
+    public void Reset_Rotation()
+    {
+        // 将 xRotation 和 yRotation 重置为 0
+        xRotation = 0.0f;
+        yRotation = 0.0f;
+
+        // 将头部和脖子的旋转重置为初始状态
+        Quaternion rotation_head = Quaternion.Euler(0, 0, 0); // 0度旋转
+        Quaternion rotation_neck = Quaternion.Euler(-90, 0, 0); // -90度旋转（如果脖子需要调整）
+
+        this.head.localRotation = rotation_head;
+        this.neck.localRotation = rotation_neck;
     }
 
 
