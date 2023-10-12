@@ -37,7 +37,7 @@ namespace Network
         public int BuffOverTime { get; set; }
     }
 
-    public class NetworkManager : MonoBehaviour
+    public class GameManager : MonoBehaviour
     {
         public string ClientIP = "127.0.0.1";
         public int ClientPort = 5559;
