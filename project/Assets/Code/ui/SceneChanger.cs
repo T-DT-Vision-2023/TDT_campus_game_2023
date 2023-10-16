@@ -9,4 +9,8 @@ public class SceneChanger : MonoBehaviour
     {
         SceneManager.LoadScene("SampleScene");
     }
+    public void SimulationStarter()
+    {
+        SceneManager.LoadScene("Shoot");
+    }
 }
