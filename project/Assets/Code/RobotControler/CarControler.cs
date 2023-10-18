@@ -161,14 +161,14 @@ public class CarControler : RoboControler
             {
                 if (forwardInput==0 && horizontalinput==0)
                 {
-                    Debug.Log("gaga!");
+                   
                     wheelColliders[i].steerAngle= this.steerAngle_temp;
                    //一段时间不控制之后回正
                    
                 }
                 else
                 {
-                    Debug.Log("ttttt");
+           
                     wheelColliders[i].steerAngle =+ this.head.localRotation.eulerAngles.y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
                     this.steerAngle_temp = wheelColliders[i].steerAngle;
                 }
@@ -236,23 +236,22 @@ public class CarControler : RoboControler
             {
                 if (forwardInput==0 && horizontalinput==0)
                 {
-                    Debug.Log("gaga!");
+                 
                     wheelColliders[i].steerAngle= this.steerAngle_temp;
                    //一段时间不控制之后回正
                    
                 }
                 else
                 {
-                    Debug.Log("ttttt");
+        
                     wheelColliders[i].steerAngle =+ this.head.localRotation.eulerAngles.y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
                     this.steerAngle_temp = wheelColliders[i].steerAngle;
                 }
                 
               
             }
-            Debug.Log("steer angle"+ wheelColliders[i].steerAngle);
-            Debug.Log(this.steerAngle_temp);
-            Debug.Log("head"+this.head.localRotation.eulerAngles);
+       
+ 
 
            
 

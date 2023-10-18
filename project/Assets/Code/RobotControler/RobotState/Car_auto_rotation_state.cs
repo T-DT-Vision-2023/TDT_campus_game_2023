@@ -110,19 +110,7 @@ namespace Code.RobotControler.RobotState
 
         }
 
-        public override void enter_state()
-        {
-            foreach (Transform armor in _controler.armors)
-            {
-                armor.GetComponent<ArmorSenser>().OnBulletHit.AddListener(this._controler.state.be_atacked);
-            }
-            this._controler.Reset_Rotation();
-        }
-
-        public override void quite_state()
-        {
-            
-        }
+      
         public void Move(MoveCommands direction)
         {
             switch (direction)
@@ -151,9 +139,20 @@ namespace Code.RobotControler.RobotState
         public void Move2yaw_pitch(float yaw, float pitch)
         {
             this._controler.act_mousex_mousey(150,0);
+        }
+        
+        public override void enter_state()
+        {
+            foreach (Transform armor in _controler.armors)
+            {
+                armor.GetComponent<ArmorSenser>().OnBulletHit.AddListener(this._controler.state.be_atacked);
+            }
+            this._controler.Reset_Rotation();
+        }
 
-
-
+        public override void quite_state()
+        {
+            
         }
 
     }

@@ -51,78 +51,15 @@ namespace Code.RobotControler.RobotState
         {
 
             time_counter += Time.deltaTime;
-            // if(Input.GetKey("1"))
-            // {
-            //     Move(MoveCommands.MOVE_FORWARD);
-            // }
-            // if(Input.GetKey("2"))
-            // {
-            //     Move(MoveCommands.MOVE_BACKWARD);
-            // }
-            // if(Input.GetKey("3"))
-            // {
-            //     Move(MoveCommands.MOVE_LEFT);
-            // }
-            // if(Input.GetKey("4"))
-            // {
-            //     Move(MoveCommands.MOVE_RIGHT);
-            // }
-            // if(Input.GetKey("5"))
-            // {
-            //     Move(MoveCommands.ROTATE_LEFT);
-            // }
-            // if(Input.GetKey("6"))
-            // {
-            //     Move(MoveCommands.ROTATE_RIGHT);
-            // }
-            //
-            // if (Input.GetKey("7"))
-            // {
-            //     yaw += 1;
-            // }
-            //
-            // if (Input.GetKey("8"))
-            // {
-            //     yaw -= 1;
-            // }
-            // if (Input.GetKey("o"))
-            // {
-            //     pitch += 1;
-            // }
-            //
-            // if (Input.GetKey("p"))
-            // {
-            //     pitch -= 1;
-            // }
-            //
-            // if (Input.GetKey("x"))
-            // {
-            //     this._controler.act_mousex_mousey(0,10);
-            // }
-            //
-            // if (Input.GetKey("r"))
-            // {
-            //     this._controler.Reset_Rotation();
-            // }
+
 
             // Move2yaw_pitch(yaw, pitch);
 
 
         }
 
-        public override void enter_state()
-        {
-            foreach (Transform armor in _controler.armors)
-            {
-                armor.GetComponent<ArmorSenser>().OnBulletHit.AddListener(this._controler.state.be_atacked);
-            }
-            this._controler.Reset_Rotation();
-        }
-
-        public override void quite_state()
-        {
-
-        }
+       
+        
         public void Move(MoveCommands direction)
         {
             switch (direction)
@@ -152,6 +89,19 @@ namespace Code.RobotControler.RobotState
         {
             this._controler.act_mousex_mousey(150,0);
         }
+        
+        public override void enter_state()
+        {
+            foreach (Transform armor in _controler.armors)
+            {
+                armor.GetComponent<ArmorSenser>().OnBulletHit.AddListener(this._controler.state.be_atacked);
+            }
+            this._controler.Reset_Rotation();
+        }
 
+        public override void quite_state()
+        {
+
+        }
     }
 }

@@ -14,31 +14,17 @@ using System.Threading;
 
 namespace Network
 {
-    public class RecvStruct
-    {
-        public double Yaw { get; set; }
-        public double Pitch { get; set; }
-        public int Shoot { get; set; }
-        public double TimeStamp { get; set; }
-        public int RequiredImageWidth { get; set; }
-        public int RequiredImageHeight { get; set; }
-    }
+   
 
-    public class SendStruct
-    {
-        public double Yaw { get; set; }
-        public double Pitch { get; set; }
-        public byte[] Img { get; set; }
-        public double TimeStamp { get; set; }
-        public double EnemyHp { get; set; }
-        public double MyHp { get; set; }
-        public int RestBullets { get; set; }
-        public int RestTime { get; set; }
-        public int BuffOverTime { get; set; }
-    }
+
 
     public class GameManager : MonoBehaviour
     {
+        /*!
+         这个类使用单例模式！！
+         */
+        public Gamemanageer game_manager = new Gamemanageer();
+        
         public string ClientIP = "127.0.0.1";
         public int ClientPort = 5559;
         public int ServerPort = 5558;
@@ -48,7 +34,6 @@ namespace Network
         public int height = 1080;
 
         private string serverAddress;
-        private string newestMessage;
         
         
         //客户端基本信息
@@ -74,29 +59,10 @@ namespace Network
         private DateTime lastPulseReceivedTime;
 
 
-        private RecvStruct receivedData = new RecvStruct();
-        private SendStruct sendData = new SendStruct();
- 
-
-        public RecvStruct GetReceivedData()
-        {
-            return receivedData;
-        }
-
-        public void SetReceivedData(RecvStruct data)
-        {
-            receivedData = data;
-        }
-
-        public SendStruct GetSendData()
-        {
-            return sendData;
-        }
-
-        public void SetSendData(SendStruct data)
-        {
-            sendData = data;
-        }
+        public RecvStruct receivedData = new RecvStruct();
+        public SendStruct sendData = new SendStruct();
+        public string newestMessage;
+        
 
         private void Start()
         {
@@ -138,23 +104,24 @@ namespace Network
             if (recv_msg)
             {
                 string tempmessage;
+                JObject json_message=new JObject();
 
                 int counter = 0;
                 while (pullSocket.TryReceiveFrameString(out tempmessage))
                 {
                    
-                    Debug.Log(tempmessage);
                     
-                    JObject json = JsonConvert.DeserializeObject<JObject>(tempmessage);
-                    Debug.Log((string)json["type"]);
+                    
+                    json_message = JsonConvert.DeserializeObject<JObject>(tempmessage);
+                 
 
-                    switch ((string)json["type"])
+                    switch ((string)json_message["type"])
                     {
 
                         case "register":
                             Debug.Log("检测到注册信息");
                             this.registeed = false;
-                            handleRegister(json);
+                            handleRegister(json_message);
                             break;
 
                         case "regist success!":
@@ -162,12 +129,13 @@ namespace Network
                             Debug.Log("注册完成");
                             this.registeed = true;
                             break;
-
-                        default:
+                        
+                        
+                        case "control":
                             counter += 1;
-                            newestMessage = tempmessage;
+                            newestMessage = tempmessage; 
                             break;
-
+                        
                     }
 
                 }
@@ -175,8 +143,11 @@ namespace Network
 
                 if (counter > 0)
                 {
+                    
                     Debug.Log($"当前最新消息:{newestMessage}");
-                    HandleData(newestMessage);
+                    
+                    HandleData(json_message);
+                    
                 }
 
             }
@@ -207,9 +178,9 @@ namespace Network
         
 
 
-        private void HandleData(string data)
+        private void HandleData(JObject json)
         {
-            var json = JsonConvert.DeserializeObject<JObject>(data);
+           
             receivedData.Yaw = (double)json["yaw"];
             receivedData.Pitch = (double)json["pitch"];
             receivedData.Shoot = (int)json["shoot"];
@@ -244,20 +215,12 @@ namespace Network
                 if (trans_frame)
                 {
                     var screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
-              
+                    //这个地方可以用多线程加速
                     var imgData = screenCapture.EncodeToJPG();
+                    
                     Destroy(screenCapture);
                     
-                    
-                    /*
-                     * 这个到底是在干什么？？？？？
-                     * 这封装的简直离谱
-                     */
-                    
-                    var sendStruct = GetSendData();
-                    sendStruct.Img = imgData;
-
-                    SetSendData(sendStruct);
+                    sendData.Img = imgData;
                 }
 
                 yield return null;
@@ -283,9 +246,9 @@ namespace Network
 
                 if (sendData.Img != null && sendData.Img.Length > 0)
                 {
-                    json["img"] = sendData.Img;
+                    json["img"] = Convert.ToBase64String(sendData.Img);
                     
-                    Debug.Log(json["img"]);
+                
                     json["hasimg"] = true;
                     /*
                      * 每次发送完都需要设置为null，否则就会重复发送画面,但是其实重复发送也没什么
