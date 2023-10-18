@@ -39,7 +39,7 @@ namespace Network
 
     public class GameManager : MonoBehaviour
     {
-        public string ClientIP = "localhost";
+        public string ClientIP = "127.0.0.1";
         public int ClientPort = 5559;
         public int ServerPort = 5558;
         // momo: 这里一律使用Client指代C++客户端，Server指代Unity服务端喵
@@ -47,11 +47,26 @@ namespace Network
         public int width = 1440;
         public int height = 1080;
 
-        private string clientAddress;
+        private string serverAddress;
+        private string newestMessage;
+        
+        
+        //客户端基本信息
+        public bool registeed = false;
+        public string team_name = "";
+        public string id = "";
+        public string time = "";
+        public string pwd =  "";
+        public string version = "";
+        
+        private byte[] imgData;
+        
+        //
+        
+        
         private PushSocket pushSocket;
         private PullSocket pullSocket;
-        private Thread receiveThread;
-        private Thread sendThread;
+
         private bool recv_msg = true;
         private bool send_msg = true;
         private bool trans_frame = true;
@@ -59,8 +74,9 @@ namespace Network
         private DateTime lastPulseReceivedTime;
 
 
-        private RecvStruct receivedData = new();
-        private SendStruct sendData = new();
+        private RecvStruct receivedData = new RecvStruct();
+        private SendStruct sendData = new SendStruct();
+ 
 
         public RecvStruct GetReceivedData()
         {
@@ -89,90 +105,106 @@ namespace Network
 
             pushSocket = new PushSocket();
             pushSocket.Options.SendHighWatermark = 1500;
-            pushSocket.Bind($"tcp://*:{ServerPort}");
+            pushSocket.Connect($"tcp://{ClientIP}:{ClientPort}");
+            
 
-            clientAddress = $"tcp://{ClientIP}:{ClientPort}";
+            serverAddress = $"tcp://*:{ServerPort}";
             pullSocket = new PullSocket();
             pullSocket.Options.ReceiveHighWatermark = 1500;
-            pullSocket.Connect(clientAddress);
-
-            receiveThread = new Thread(ReceiveMessages);
-            receiveThread.Start();
+            pullSocket.Bind(serverAddress);
 
             StartCoroutine(CaptureAndSendImage());
         }
 
+        private void Update()
+        {
+            //这个地方只要每一帧获取最新的就可以了
+                ReceiveMessages();
+                
+            if (registeed)
+            {
+                SendMessage();
+                
+            }
+        }
+
         private void ReceiveMessages()
         {
-            while (recv_msg)
+            
+            /*
+             * 这里修改为始终获取最新的一帧
+             */
+            
+            if (recv_msg)
             {
-                if (pullSocket.TryReceiveFrameString(out var header))
-                {
-                    Debug.Log($"Received message: {header}");
+                string tempmessage;
 
-                    switch (header)
+                int counter = 0;
+                while (pullSocket.TryReceiveFrameString(out tempmessage))
+                {
+                   
+                    Debug.Log(tempmessage);
+                    
+                    JObject json = JsonConvert.DeserializeObject<JObject>(tempmessage);
+                    Debug.Log((string)json["type"]);
+
+                    switch ((string)json["type"])
                     {
-                        case "msg":
-                        {
-                            if (pullSocket.TryReceiveFrameString(out var message)) HandleMessage(message);
+
+                        case "register":
+                            Debug.Log("检测到注册信息");
+                            this.registeed = false;
+                            handleRegister(json);
                             break;
-                        }
-                        case "data":
-                        {
-                            if (pullSocket.TryReceiveFrameString(out var data)) HandleData(data);
+
+                        case "regist success!":
+
+                            Debug.Log("注册完成");
+                            this.registeed = true;
                             break;
-                        }
+
+                        default:
+                            counter += 1;
+                            newestMessage = tempmessage;
+                            break;
+
                     }
+
                 }
 
-                if (!is_registered)
+
+                if (counter > 0)
                 {
-                    Debug.Log("未注册，等待客户端注册喵");
-                    Thread.Sleep(1000);
-                    continue;
+                    Debug.Log($"当前最新消息:{newestMessage}");
+                    HandleData(newestMessage);
                 }
 
-                if (!((DateTime.Now - lastPulseReceivedTime).TotalSeconds > 5)) return; // 5秒未收到心跳包
-                Debug.Log("未接收到心跳包，客户端可能离线捏");
-                Thread.Sleep(1000);
-                Debug.Log("尝试重新连接客户端喵");
             }
         }
-
-
-        private void HandleMessage(string message)
+        
+        
+        private void ReceiveRawMessages()
         {
-            var json = JsonConvert.DeserializeObject<JObject>(message);
-
-            switch (json["type"]?.ToString())
+            
+            /*
+             * 这里修改为始终获取最新的一帧
+             */
+            
+            if (recv_msg)
             {
-                case "register":
+                string tempmessage;
+                while (pullSocket.TryReceiveFrameString(out tempmessage))
                 {
-                    Debug.Log("Register success~");
-
-                    is_registered = true;
-                    sendThread = new Thread(SendMessage);
-                    sendThread.Start();
-
-                    var responseJson = "{\"type\":\"register success\"}";
-                    pushSocket.SendFrame("msg", true);
-                    pushSocket.SendFrame(responseJson);
-                    break;
+                   
+                    Debug.Log(tempmessage);
+                    newestMessage = tempmessage;
+                        
                 }
-                case "offline":
-                {
-                    Debug.Log("Client offline~");
-
-                    var responseJson = "{\"type\":\"offline success\"}";
-                    pushSocket.SendFrame("msg", true);
-                    pushSocket.SendFrame(responseJson);
-                    break;
-                }
-                case "pulse":
-                    lastPulseReceivedTime = DateTime.Now; // 更新上一次接收到心跳包的时间
-                    break;
             }
         }
+        
+
+        
 
 
         private void HandleData(string data)
@@ -186,6 +218,25 @@ namespace Network
             receivedData.RequiredImageHeight = (int)json["required_image_height"];
         }
 
+        private void handleRegister(JObject data)
+        {
+            this.team_name = (string)data["info"];
+
+            this.id = (string)data["id"];
+
+            this.time = (string)data["time"];
+
+            this.pwd = (string)data["pwd"];
+
+            this.version = (string)data["version"];
+            
+            Debug.Log($"检测到c++操作端注册，开始尝试返回请求");
+
+            this.pushSocket.TrySendFrame("regist success!");
+            
+            
+        }
+
         private IEnumerator CaptureAndSendImage()
         {
             while (true)
@@ -193,9 +244,16 @@ namespace Network
                 if (trans_frame)
                 {
                     var screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
+              
                     var imgData = screenCapture.EncodeToJPG();
                     Destroy(screenCapture);
-
+                    
+                    
+                    /*
+                     * 这个到底是在干什么？？？？？
+                     * 这封装的简直离谱
+                     */
+                    
                     var sendStruct = GetSendData();
                     sendStruct.Img = imgData;
 
@@ -209,7 +267,7 @@ namespace Network
 
         public void SendMessage()
         {
-            while (send_msg)
+            if (send_msg)
             {
                 var json = new JObject
                 {
@@ -224,11 +282,26 @@ namespace Network
                 };
 
                 if (sendData.Img != null && sendData.Img.Length > 0)
-                    json["img"] = Convert.ToBase64String(sendData.Img);
-
-                var message = json.ToString();
-                pushSocket.SendFrame("data", true);
-                pushSocket.SendFrame(message);
+                {
+                    json["img"] = sendData.Img;
+                    
+                    Debug.Log(json["img"]);
+                    json["hasimg"] = true;
+                    /*
+                     * 每次发送完都需要设置为null，否则就会重复发送画面,但是其实重复发送也没什么
+                     */
+                    
+                    sendData.Img = null;
+                }
+                else
+                {
+                    json["hasimg"] = false;
+                }
+                
+                json["end"] = "this is a end!!!!!!!!!";
+                
+                pushSocket.TrySendFrame(json.ToString());
+                
             }
         }
 
@@ -237,10 +310,7 @@ namespace Network
         {
             send_msg = false;
             recv_msg = false;
-            if (sendThread != null && sendThread.IsAlive)
-                sendThread.Join();
-            if (receiveThread != null && receiveThread.IsAlive)
-                receiveThread.Join();
+
             pushSocket.Close();
             pullSocket.Close();
             NetMQConfig.Cleanup();
