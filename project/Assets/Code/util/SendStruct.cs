@@ -2,12 +2,12 @@ namespace Code.util
 {
     public class SendStruct
     {
-        public double Yaw { get; set; }
-        public double Pitch { get; set; }
+        public float Yaw { get; set; }
+        public float Pitch { get; set; }
         public byte[] Img { get; set; }
-        public double TimeStamp { get; set; }
-        public double EnemyHp { get; set; }
-        public double MyHp { get; set; }
+        public float TimeStamp { get; set; }
+        public float EnemyHp { get; set; }
+        public float MyHp { get; set; }
         public int RestBullets { get; set; }
         public int RestTime { get; set; }
         public int BuffOverTime { get; set; }

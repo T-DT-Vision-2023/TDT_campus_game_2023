@@ -12,7 +12,7 @@ public class CarControler : RoboControler
 {   
 
     
-    public int car_defalt_state = 0;
+    public int car_defalt_state = 1;
     
     
     public WheelCollider[] wheelColliders;
@@ -50,8 +50,8 @@ public class CarControler : RoboControler
     
     private float rotationInput;
     private float Angle = 0.0f;
-
     public int little_bullet_damage = 10;
+    
 
     
 
@@ -100,22 +100,22 @@ public class CarControler : RoboControler
         Healthbar_controler.SetMaxHealth((int)blood);
 
         
-        // switch (this.car_defalt_state)
-        // {
-        //
-        //     case 0 :
-        //         break;
-        //
-        //     case 1:
-        //
-        //         print("初始化车辆自旋状态");
-        //
-        //         RoboState temp = new Car_auto_rotation_state(this);
-        //
-        //         change_state(temp);
-        //
-        //         break;
-        // }
+         switch (this.car_defalt_state)
+         {
+        
+             case 0 :
+                 break;
+        
+             case 1:
+        
+                print("初始化车辆自旋状态");
+        
+                 RoboState temp = new Car_gaming_state(this);
+        
+                change_state(temp);
+        
+                 break;
+         }
         
         
         
@@ -208,11 +208,77 @@ public class CarControler : RoboControler
             
         }
         
+    }
+    
+    
+        public void act_vertical_and_horizontal_in_coordinate_system(float forwardInput,float horizontalinput,float y)
+    {
        
+        
+        //还在有一些小问题，但是已经不重要了
+        
+        for (int i = 0; i < wheelColliders.Length; i++)
+        {
+            
+            
+            if (forwardInput>0)
+            {
+                //现在角度有问题head
+                wheelColliders[i].steerAngle =y+Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+                this.steerAngle_temp = wheelColliders[i].steerAngle;
+                
+            }
+            else
+            {
+                if (forwardInput==0 && horizontalinput==0)
+                {
+                   
+                    wheelColliders[i].steerAngle= this.steerAngle_temp;
+                   //一段时间不控制之后回正
+                   
+                }
+                else
+                {
+           
+                    wheelColliders[i].steerAngle =+ y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+                    this.steerAngle_temp = wheelColliders[i].steerAngle;
+                }
+                
+              
+            }
+            /*Debug.Log("steer angle"+ wheelColliders[i].steerAngle);
+            Debug.Log(this.steerAngle_temp);
+            Debug.Log("head"+this.head.localRotation.eulerAngles);*/
 
+           
 
-
-
+            if (horizontalinput>0)
+            {
+                if (forwardInput>0)
+                {
+                    wheelColliders[i].motorTorque = -this.motorTorque/2*forwardInput-horizontalinput*this.motorTorque/2;
+                }
+                else
+                {
+                    wheelColliders[i].motorTorque = -this.motorTorque / 2 * forwardInput +
+                                                    horizontalinput * this.motorTorque / 2;
+                }
+            }
+            else
+            {
+                if (forwardInput>0)
+                {
+                    wheelColliders[i].motorTorque = -this.motorTorque / 2 * forwardInput + horizontalinput * this.motorTorque / 2;
+                }
+                else
+                {
+                    wheelColliders[i].motorTorque = -this.motorTorque/2*forwardInput-horizontalinput*this.motorTorque/2;
+                }
+            }
+            
+            
+        }
+        
     }
     
       public void act_vertical_and_horizontal_auto(float forwardInput,float horizontalinput)
@@ -303,9 +369,25 @@ public class CarControler : RoboControler
         this.neck.localRotation = rotation_neck;
         //chassis.localRotation = rotation_chassis;
         
-
-
     }
+
+    public void move_to_aw_pich_direct(float yaw, float pitch)
+    {
+        Quaternion rotation_head = Quaternion.Euler(yaw, pitch, 0);
+        this.head.localRotation = rotation_head;
+        
+    }
+
+    public float get_head_pitch()
+    {
+        return head.localRotation.eulerAngles.x;
+    }
+    public float get_head_yaw()
+    {
+        return this.head.localRotation.eulerAngles.y;
+    }
+    
+    
     public void Reset_Rotation()
     {
         // 将 xRotation 和 yRotation 重置为 0

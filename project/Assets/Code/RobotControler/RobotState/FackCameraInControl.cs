@@ -16,7 +16,12 @@ namespace Code.RobotControler.RobotState
         public float speed = 5.0f;
         GameObject bullet = Resources.Load<GameObject>("model/bullet_prefab");
         public float shoot_time = 0.0f;
-        public float shoot_time_interval = 0.333f;
+        public float shoot_time_interval = 0.2f;
+        public string control_mode = "player_mode";
+        public Quaternion start_coordinate;
+
+        public Vector3 chassis_Euler;
+        
 
         
         public FackCameraInControl(FakeCamera f)
@@ -44,18 +49,57 @@ namespace Code.RobotControler.RobotState
             }
             else
             {
-                //进入控制模式
-                this.camera.transform.position = this.camera.car.get_head_position()+camara_position_fix;
 
-                this.camera.transform.rotation =
-                    UtilsForGameobject.GetLocalRotation(this.camera.car.head, new Vector3(0, 180, 0));
+
+                switch (this.control_mode)
+                {
+                    case "player_mode":
+                        //进入控制模式
+                        this.camera.transform.position = this.camera.car.get_head_position()+camara_position_fix;
+
+                        this.camera.transform.rotation =
+                            UtilsForGameobject.GetLocalRotation(this.camera.car.head, new Vector3(0, 180, 0));
                 
-                // 获取各种输入并且调用函数
+                        // 获取各种输入并且调用函数
              
-                this.camera.car.act_vertical_and_horizontal(Input.GetAxis("Vertical"),Input.GetAxis("Horizontal"));
+                        this.camera.car.act_vertical_and_horizontal(Input.GetAxis("Vertical"),Input.GetAxis("Horizontal"));
                 
-                this.camera.car.act_mousex_mousey(Input.GetAxis("Mouse X"),Input.GetAxis("Mouse Y"));
+                        this.camera.car.act_mousex_mousey(Input.GetAxis("Mouse X"),Input.GetAxis("Mouse Y"));
+                        
+                        break;
+                    
+                    case "remote_control_mode":
+                        //进入控制模式
+                        
+                        this.camera.transform.position = this.camera.car.get_head_position()+camara_position_fix;
+
+                        this.camera.transform.rotation =
+                            UtilsForGameobject.GetLocalRotation(this.camera.car.head, new Vector3(0, 180, 0));
                 
+                        // 获取各种输入并且调用函数
+
+                        float fix_y = this.camera.car.chassis.eulerAngles.y-this.chassis_Euler.y;
+                        
+                       
+                
+                        this.camera.car.act_vertical_and_horizontal_in_coordinate_system(Input.GetAxis("Vertical"),Input.GetAxis("Horizontal"),start_coordinate.eulerAngles.y-fix_y);
+                
+                        //this.camera.car.act_mousex_mousey(Input.GetAxis("Mouse X"),Input.GetAxis("Mouse Y"));
+                        /*
+                         * 这里需要记录一下现在底盘相对于一开始的旋转
+                         */
+                         this.camera.car.move_to_aw_pich_direct(Network.GameManager.receivedData.Pitch,Network.GameManager.receivedData.Yaw);
+                        
+                        //设置最新消息
+
+                        Network.GameManager.sendData.TimeStamp = Time.time;
+                        Network.GameManager.sendData.Yaw = this.camera.car.get_head_yaw();
+                        Network.GameManager.sendData.Pitch = this.camera.car.get_head_pitch();
+                        Network.GameManager.sendData.MyHp = this.camera.car.blood;
+                        break;
+                        
+                }
+           
                 
                 //连续三次按下快捷键弹出车辆
                 
@@ -65,8 +109,8 @@ namespace Code.RobotControler.RobotState
             
             // this.camera.transform.position = position;
             
-            //按下l退出状态
-            if(Input.GetKeyDown("u"))
+
+            if(Input.GetKeyDown("r"))
             {
                 if (this.camera.car != null)
                 {
@@ -75,7 +119,7 @@ namespace Code.RobotControler.RobotState
                     this.camera.car.change_state(newstate);
                 }
             }
-            if(Input.GetKeyDown("i"))
+            if(Input.GetKeyDown("g"))
             {
                 if (this.camera.car != null)
                 {
@@ -84,6 +128,8 @@ namespace Code.RobotControler.RobotState
                     this.camera.car.change_state(newstate);
                 }
             }
+            
+            //摄像机退出控制状态
             if (Input.GetKeyDown("l"))
             {
 
@@ -94,6 +140,25 @@ namespace Code.RobotControler.RobotState
                 this.camera.change_state(new_state);
 
             }
+
+            if (Input.GetKeyDown("i"))
+            {
+                
+                /*
+                 * 这里有个问题，如何能够以第三视角查看车辆呢？
+                 */
+
+                if (this.control_mode=="player_mode")
+                {
+                    this.control_mode = "remote_control_mode";
+                }
+                else
+                {
+                    this.control_mode = "player_mode";
+                }
+                
+            }
+            
             this.shoot_time += Time.deltaTime;
             if (Input.GetMouseButtonDown(0))
             {
@@ -101,7 +166,10 @@ namespace Code.RobotControler.RobotState
                 {
                     Debug.Log(shoot_time);
                     this.shoot_time = 0.0f;
-                    GameObject temp_bullet=Transform.Instantiate(this.bullet,this.camera.transform.position,this.camera.transform.rotation);
+
+                    Vector3 fix_position = this.camera.transform.position+0.4f*this.camera.transform.forward;
+                     
+                    GameObject temp_bullet=Transform.Instantiate(this.bullet,fix_position,this.camera.transform.rotation);
                     temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward*28.0f;
                     UnityEngine.GameObject.Destroy(temp_bullet,5);
                 }
@@ -112,15 +180,15 @@ namespace Code.RobotControler.RobotState
 
         public override void enter_state()
         {
-
-            this.camera.key_message = "";
-
-            
+            Debug.Log("控制车辆");
+            this.start_coordinate = this.camera.car.head.localRotation;
+            this.chassis_Euler = this.camera.car.chassis.rotation.eulerAngles;
+           
         }
 
         public override void quite_state()
         {
-            
+            Debug.Log("离开车辆");
         }
         
     }

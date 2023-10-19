@@ -14,12 +14,11 @@ namespace Code.RobotControler.Senser
         public void OnCollisionEnter(Collision other)
         {
             //这个地方可以用来判断大小弹
+            if (other.transform.tag=="bullet")
+            {
+                OnBulletHit.Invoke(); 
+            }
             
-            Debug.Log(other.contacts[0].point);
-            Debug.Log("be attacked by bullet!");
-            OnBulletHit.Invoke();
-            
-        
         }
     }
 }

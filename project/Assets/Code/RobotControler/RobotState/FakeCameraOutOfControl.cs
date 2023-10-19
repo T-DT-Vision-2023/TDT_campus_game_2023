@@ -34,9 +34,11 @@ namespace Code.RobotControler.RobotState
             //欧拉角转化为四元数
             Quaternion rotation = Quaternion.Euler(-yRotation, -xRotation, 0);
             camera.transform.rotation = rotation;
+            
+ 
             camera.transform.Translate(Vector3.forward * Input.GetAxis("Vertical")*move_speed*Time.deltaTime  );
             camera.transform.Translate(Vector3.right * Input.GetAxis("Horizontal")*move_speed*Time.deltaTime  );
-            
+      
             
             if (Input.GetKey("e"))
             {
@@ -75,8 +77,9 @@ namespace Code.RobotControler.RobotState
                     {
                         if (grandpa.GetComponent<CarControler>()!=null)
                         {
-                            change_to_incontrol();
                             this.camera.car = grandpa.GetComponent<CarControler>();
+                            change_to_incontrol();
+                           
                         }
                         else
                         {
@@ -89,7 +92,9 @@ namespace Code.RobotControler.RobotState
                 
                 if (Input.GetMouseButtonDown(0))
                 {
-                    GameObject temp_bullet=Transform.Instantiate(this.bullet,this.camera.transform.position,this.camera.transform.rotation);
+                    Vector3 fix_position = this.camera.transform.position+ 0f*this.camera.transform.forward;
+                     
+                    GameObject temp_bullet=Transform.Instantiate(this.bullet,fix_position,this.camera.transform.rotation);
                     temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward*28.0f;
                     UnityEngine.GameObject.Destroy(temp_bullet,5);
                     

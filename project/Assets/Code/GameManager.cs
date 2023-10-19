@@ -23,7 +23,20 @@ namespace Network
         /*!
          这个类使用单例模式！！
          */
-        public Gamemanageer game_manager = new Gamemanageer();
+        public static Gamemanageer   game_manager ;
+
+        public static Gamemanageer GetInstance
+        {
+            get
+            {
+                if (game_manager==null)
+                {
+                    game_manager = new GameObject("GameManager").AddComponent<Gamemanageer>();
+                    
+                }
+                return game_manager;
+            }
+        }
         
         public string ClientIP = "127.0.0.1";
         public int ClientPort = 5559;
@@ -59,13 +72,19 @@ namespace Network
         private DateTime lastPulseReceivedTime;
 
 
-        public RecvStruct receivedData = new RecvStruct();
-        public SendStruct sendData = new SendStruct();
+        public  static RecvStruct receivedData = new RecvStruct();
+        public  static SendStruct sendData = new SendStruct();
         public string newestMessage;
         
 
         private void Start()
-        {
+        {   
+            
+            /*Resolution[] resolutions = Screen.resolutions;
+            //设置当前分辨率
+            Screen.SetResolution(resolutions[resolutions.Length - 1].width, resolutions[resolutions.Length - 1].height, true);
+            Screen.fullScreen = true; //设置成全屏, */
+            
             Debug.Log("NetworkManager Start 没有输出？？？？");
             Screen.SetResolution(width, height, false);
 
@@ -84,6 +103,18 @@ namespace Network
 
         private void Update()
         {
+            //这里增加对鼠标的基本控制和锁定
+            
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                Cursor.lockState = CursorLockMode.None;
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+            }
+            
             //这个地方只要每一帧获取最新的就可以了
                 ReceiveMessages();
                 
@@ -181,10 +212,10 @@ namespace Network
         private void HandleData(JObject json)
         {
            
-            receivedData.Yaw = (double)json["yaw"];
-            receivedData.Pitch = (double)json["pitch"];
+            receivedData.Yaw = (float)json["yaw"];
+            receivedData.Pitch = (float)json["pitch"];
             receivedData.Shoot = (int)json["shoot"];
-            receivedData.TimeStamp = (double)json["time_stamp"];
+            receivedData.TimeStamp = (float)json["time_stamp"];
             receivedData.RequiredImageWidth = (int)json["required_image_width"];
             receivedData.RequiredImageHeight = (int)json["required_image_height"];
         }
@@ -212,7 +243,7 @@ namespace Network
         {
             while (true)
             {
-                if (trans_frame)
+                if (trans_frame & registeed)
                 {
                     var screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
                     //这个地方可以用多线程加速
