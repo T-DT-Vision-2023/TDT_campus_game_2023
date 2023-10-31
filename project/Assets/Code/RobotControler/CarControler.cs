@@ -7,6 +7,7 @@ using Code.RobotControler.Senser;
 using Code.util;
 using Unity.VisualScripting;
 using UnityEngine;
+using FixedUpdate = UnityEngine.PlayerLoop.FixedUpdate;
 
 public class CarControler : RoboControler
 {   
@@ -55,7 +56,7 @@ public class CarControler : RoboControler
 
     
 
-
+    
  
     
     private void Start()
@@ -115,6 +116,17 @@ public class CarControler : RoboControler
                 change_state(temp);
         
                  break;
+             
+             case 2:
+                 
+                 print("初始化车辆自旋状态");
+
+                 RoboState temp1 = new Car_auto_rotation_state(this);
+        
+                 change_state(temp1);
+        
+                 break;
+                 
          }
         
         
@@ -142,7 +154,8 @@ public class CarControler : RoboControler
 
     public void act_vertical_and_horizontal(float forwardInput,float horizontalinput)
     {
-       
+       Debug.Log(this.head.localRotation.eulerAngles.y);
+       Debug.Log(this.head.rotation.eulerAngles.y);
         
         //还在有一些小问题，但是已经不重要了
         
@@ -153,7 +166,7 @@ public class CarControler : RoboControler
             if (forwardInput>0)
             {
                 //现在角度有问题
-                wheelColliders[i].steerAngle =this.head.localRotation.eulerAngles.y+Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+                wheelColliders[i].steerAngle =(this.head.localRotation.eulerAngles.y+Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2)))))%360;
                 this.steerAngle_temp = wheelColliders[i].steerAngle;
                 
             }
@@ -168,8 +181,9 @@ public class CarControler : RoboControler
                 }
                 else
                 {
-           
-                    wheelColliders[i].steerAngle =+ this.head.localRotation.eulerAngles.y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+
+                
+                    wheelColliders[i].steerAngle = (this.head.localRotation.eulerAngles.y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2)))))%360;
                     this.steerAngle_temp = wheelColliders[i].steerAngle;
                 }
                 
@@ -214,8 +228,9 @@ public class CarControler : RoboControler
         public void act_vertical_and_horizontal_in_coordinate_system(float forwardInput,float horizontalinput,float y)
     {
        
-        
         //还在有一些小问题，但是已经不重要了
+        
+        
         
         for (int i = 0; i < wheelColliders.Length; i++)
         {
@@ -223,8 +238,8 @@ public class CarControler : RoboControler
             
             if (forwardInput>0)
             {
-                //现在角度有问题head
-                wheelColliders[i].steerAngle =y+Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+                //现在角度有问题
+                wheelColliders[i].steerAngle =(y+Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2)))))%360;
                 this.steerAngle_temp = wheelColliders[i].steerAngle;
                 
             }
@@ -239,8 +254,9 @@ public class CarControler : RoboControler
                 }
                 else
                 {
-           
-                    wheelColliders[i].steerAngle =+ y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2))));
+
+                
+                    wheelColliders[i].steerAngle = (y -Mathf.Rad2Deg*Mathf.Asin(horizontalinput/Mathf.Sqrt((Mathf.Pow(forwardInput,2)+Mathf.Pow(horizontalinput,2)))))%360;
                     this.steerAngle_temp = wheelColliders[i].steerAngle;
                 }
                 
