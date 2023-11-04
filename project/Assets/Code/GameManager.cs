@@ -91,6 +91,7 @@ namespace Network
             pullSocket.Bind(serverAddress);
 
             StartCoroutine(CaptureAndSendImage());
+            StartCoroutine(ReceiveMessagesCoroutine());
         }
 
 
@@ -102,19 +103,12 @@ namespace Network
 
             if (Input.GetMouseButtonDown(0)) Cursor.lockState = CursorLockMode.Locked;
 
-            //这个地方只要每一帧获取最新的就可以了
-            ReceiveMessages();
-
             if (registeed) SendMessage();
         }
 
-        private void ReceiveMessages()
+        private IEnumerator ReceiveMessagesCoroutine()
         {
-            /*
-             * 这里修改为始终获取最新的一帧
-             */
-
-            if (recv_msg)
+            while (recv_msg)
             {
                 string tempmessage;
                 var json_message = new JObject();
@@ -123,7 +117,6 @@ namespace Network
                 while (pullSocket.TryReceiveFrameString(out tempmessage))
                 {
                     json_message = JsonConvert.DeserializeObject<JObject>(tempmessage);
-
 
                     switch ((string)json_message["type"])
                     {
@@ -134,11 +127,9 @@ namespace Network
                             break;
 
                         case "regist success!":
-
                             Debug.Log("注册完成");
                             registeed = true;
                             break;
-
 
                         case "control":
                             counter += 1;
@@ -147,13 +138,14 @@ namespace Network
                     }
                 }
 
-
                 if (counter > 0)
                 {
                     Debug.Log($"当前最新消息:{newestMessage}");
-
                     HandleData(json_message);
                 }
+
+                // 等待直到下一帧
+                yield return null;
             }
         }
 
