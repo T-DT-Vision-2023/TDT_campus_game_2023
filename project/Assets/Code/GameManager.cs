@@ -72,6 +72,8 @@ namespace Network
         public RenderTexture _renderTexture;
         
         
+        
+        
 
 
         private void Start()
@@ -117,6 +119,7 @@ namespace Network
             while (recv_msg)
             {
                 string tempmessage;
+                
                 var json_message = new JObject();
 
                 var counter = 0;
@@ -238,8 +241,8 @@ namespace Network
                     ["yaw"] = sendData.Yaw,
                     ["pitch"] = sendData.Pitch,
                     ["time_stamp"] = sendData.TimeStamp,
-                    ["enemy_hp"] = sendData.EnemyHp,
-                    ["my_hp"] = sendData.MyHp,
+                    ["blue_hp"] = sendData.BlueHP,
+                    ["red_hp"] = sendData.RedHp,
                     ["rest_bullets"] = sendData.RestBullets,
                     ["rest_time"] = sendData.RestTime,
                     ["buff_over_time"] = sendData.BuffOverTime

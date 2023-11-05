@@ -13,11 +13,12 @@ using FixedUpdate = UnityEngine.PlayerLoop.FixedUpdate;
 public class CarControler : RoboControler
 {
     public int car_defalt_state = 1;
-
-
+    public Material[] materials;
+    
     public WheelCollider[] wheelColliders;
     public Transform true_wheel;
     public List<Transform> armors;
+    public List<Transform> light_bars;
     public Transform health_bar;
     public HealthBar Healthbar_controler;
 
@@ -53,6 +54,11 @@ public class CarControler : RoboControler
     private float rotationInput;
     private float Angle = 0.0f;
     public int little_bullet_damage = 10;
+    
+    public string control_mode = "player_mode";
+    
+    public string color = "blue";
+    
 
 
     private void Start()
@@ -83,6 +89,8 @@ public class CarControler : RoboControler
         neck = UtilsForGameobject.getallChildren_by_keyword(transform, "neck")[0];
         chassis = UtilsForGameobject.getallChildren_by_keyword(transform, "fuck")[0];
         armors = UtilsForGameobject.getallChildren_by_keyword(transform, "armor");
+        light_bars = UtilsForGameobject.getallChildren_by_keyword(transform, "light_bar");
+        
 
         // 设定滤波器参数
         yawFilter = new KalmanFilter(0.015f, 0.1f, 1f, 0f);
@@ -119,6 +127,10 @@ public class CarControler : RoboControler
 
                 break;
         }
+        
+        //初始化灯条颜色
+        
+        change_light_bar_color(this.color);
     }
 
     //理论上来说这里被控制单位不应该有update
@@ -360,5 +372,39 @@ public class CarControler : RoboControler
 
         this.state = state;
         this.state.enter_state();
+    }
+    
+    public void change_light_bar_color(string color)
+    {
+        
+        
+        switch (color)
+        {
+            case "blue":
+                this.color = color;
+                
+
+                for (int i = 0; i < this.light_bars.Count; i++)
+                {
+                
+                    this.light_bars[i].gameObject.GetComponent<Renderer>().material = materials[0];
+                }
+                break;
+            case "red":
+
+                this.color = color;
+                for (int i = 0; i < this.light_bars.Count; i++)
+                {
+                    this.light_bars[i].gameObject.GetComponent<Renderer>().material = materials[1];
+                }
+                
+                break;
+            
+            default:
+                Debug.LogWarning("没有对应的材质:"+ color);
+                
+                break;
+            
+        }
     }
 }

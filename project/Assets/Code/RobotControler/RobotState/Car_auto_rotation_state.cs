@@ -54,6 +54,17 @@ namespace Code.RobotControler.RobotState
 
             }
             
+            //尝试自动同步
+
+            if (_controler.color=="red")
+            {
+                Network.GameManager.sendData.RedHp = this._controler.blood;
+            }
+            else
+            {
+                Network.GameManager.sendData.BlueHP = this._controler.blood;
+            }
+            
 
         }
 

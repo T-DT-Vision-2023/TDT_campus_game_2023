@@ -53,6 +53,8 @@ namespace Code.RobotControler.RobotState
             }
             else
             {
+                
+                this.camera.car.control_mode = this.control_mode;
 
 
                 switch (this.control_mode)
@@ -133,11 +135,22 @@ namespace Code.RobotControler.RobotState
                         }
 
                         //设置最新消息
+                        //这个地方的设计理念是，谁修改了谁自己管
 
                         Network.GameManager.sendData.TimeStamp = Time.time;
                         Network.GameManager.sendData.Yaw = this.camera.car.get_head_yaw();
                         Network.GameManager.sendData.Pitch = this.camera.car.get_head_pitch();
-                        Network.GameManager.sendData.MyHp = this.camera.car.blood;
+
+                        if (this.camera.car.color=="blue")
+                        {
+                            Network.GameManager.sendData.BlueHP = this.camera.car.blood;
+                        }
+                        else
+                        {
+                            Network.GameManager.sendData.RedHp = this.camera.car.blood;
+                        }
+                        
+                        
                         break;
 
                 }
