@@ -69,6 +69,10 @@ namespace Network
         public static SendStruct sendData = new();
         public string newestMessage;
 
+        public RenderTexture _renderTexture;
+        
+        
+
 
         private void Start()
         {
@@ -76,6 +80,8 @@ namespace Network
             //设置当前分辨率
             Screen.SetResolution(resolutions[resolutions.Length - 1].width, resolutions[resolutions.Length - 1].height, true);
             Screen.fullScreen = true; //设置成全屏, */
+            
+            _renderTexture=new RenderTexture(640, 480, 3);
 
             Debug.Log("NetworkManager Start 没有输出？？？？");
             Screen.SetResolution(width, height, false);
@@ -197,17 +203,25 @@ namespace Network
 
         private IEnumerator CaptureAndSendImage()
         {
+            
+            float startTime = Time.realtimeSinceStartup;
             while (true)
             {
                 if (trans_frame & registeed)
                 {
+                    
+                   
                     var screenCapture = ScreenCapture.CaptureScreenshotAsTexture();
+                    //ScreenCapture.CaptureScreenshotIntoRenderTexture(_renderTexture);
                     //这个地方可以用多线程加速
+                    
                     var imgData = screenCapture.EncodeToJPG();
-
+             
                     Destroy(screenCapture);
 
                     sendData.Img = imgData;
+                    
+                    
                 }
 
                 yield return null;

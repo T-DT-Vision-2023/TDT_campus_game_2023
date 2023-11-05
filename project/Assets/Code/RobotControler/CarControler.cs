@@ -7,6 +7,7 @@ using Code.RobotControler.Senser;
 using Code.util;
 using Unity.VisualScripting;
 using UnityEngine;
+
 using FixedUpdate = UnityEngine.PlayerLoop.FixedUpdate;
 
 public class CarControler : RoboControler
@@ -133,9 +134,7 @@ public class CarControler : RoboControler
 
     public void act_vertical_and_horizontal(float forwardInput, float horizontalinput)
     {
-        Debug.Log(head.localRotation.eulerAngles.y);
-        Debug.Log(head.rotation.eulerAngles.y);
-
+      
         //还在有一些小问题，但是已经不重要了
 
         for (var i = 0; i < wheelColliders.Length; i++)
