@@ -7,14 +7,13 @@ using Code.RobotControler.Senser;
 using Code.util;
 using Unity.VisualScripting;
 using UnityEngine;
-
 using FixedUpdate = UnityEngine.PlayerLoop.FixedUpdate;
 
 public class CarControler : RoboControler
 {
     public int car_defalt_state = 1;
     public Material[] materials;
-    
+
     public WheelCollider[] wheelColliders;
     public Transform true_wheel;
     public List<Transform> armors;
@@ -42,8 +41,30 @@ public class CarControler : RoboControler
     private float yRotation = 0.0f;
     private float steerAngle_temp = 0.0f;
 
-    private KalmanFilter yawFilter;
-    private KalmanFilter pitchFilter;
+    // 滤波器参数，暂时不要了
+    // private KalmanFilter yawFilter;
+    // private KalmanFilter pitchFilter;
+
+    // pid参数
+    public double yaw_kp, yaw_ki, yaw_kd;
+    public double pitch_kp, pitch_ki, pitch_kd;
+    private double yaw_last_error, pitch_last_error, yaw_accumulate_error, pitch_accumulate_error;
+    public double max_yaw_accmulate_error, max_pitch_accmulate_error;
+    private Vector2 targetPosition;
+
+    public double Ayaw_kp, Ayaw_ki, Ayaw_kd;
+    public double Apitch_kp, Apitch_ki, Apitch_kd;
+    private double Ayaw_last_error, Apitch_last_error, Ayaw_accumulate_error, Apitch_accumulate_error;
+    public double Amax_yaw_accmulate_error, Amax_pitch_accmulate_error;
+    private Vector2 targetSpeed;
+
+    private IEnumerator inner_pid, outer_pid;
+    private IEnumerator cameraMove;
+    public float control_cycle_time;
+    public float LimitPitch = 70.0f;
+
+    private Vector2 cnt_speed;
+    private Vector2 cnt_accSpeed;
 
 
     public Transform head;
@@ -54,11 +75,10 @@ public class CarControler : RoboControler
     private float rotationInput;
     private float Angle = 0.0f;
     public int little_bullet_damage = 10;
-    
+
     public string control_mode = "player_mode";
-    
+
     public string color = "blue";
-    
 
 
     private void Start()
@@ -90,11 +110,12 @@ public class CarControler : RoboControler
         chassis = UtilsForGameobject.getallChildren_by_keyword(transform, "fuck")[0];
         armors = UtilsForGameobject.getallChildren_by_keyword(transform, "armor");
         light_bars = UtilsForGameobject.getallChildren_by_keyword(transform, "light_bar");
-        
 
-        // 设定滤波器参数
-        yawFilter = new KalmanFilter(0.015f, 0.1f, 1f, 0f);
-        pitchFilter = new KalmanFilter(0.015f, 0.1f, 1f, 0f);
+
+        // 设定滤波器参数 暂时不要了
+        // yawFilter = new KalmanFilter(0.015f, 0.1f, 1f, 0f);
+        // pitchFilter = new KalmanFilter(0.015f, 0.1f, 1f, 0f);
+
 
         foreach (var armor in armors) armor.AddComponent<ArmorSenser>();
 
@@ -127,16 +148,145 @@ public class CarControler : RoboControler
 
                 break;
         }
-        
-        //初始化灯条颜色
-        
-        change_light_bar_color(this.color);
+
+        // 初始化灯条颜色
+
+        change_light_bar_color(color);
+
+        // 初始化PID协程
+        inner_pid = innerPID();
+        outer_pid = outerPID();
+        cameraMove = Move();
+        StartCoroutine(inner_pid);
+        StartCoroutine(outer_pid);
+        StartCoroutine(cameraMove);
     }
 
-    //理论上来说这里被控制单位不应该有update
+    // 理论上来说这里被控制单位不应该有update
     private void Update()
     {
         if (state != null) state.On_update();
+    }
+
+    private IEnumerator Move()
+    {
+        while (true)
+
+        {
+            yield return new WaitForSeconds(control_cycle_time);
+            if (control_mode != "remote_control_mode") continue;
+            var yaw = head.transform.localEulerAngles.y;
+            var pitch = head.transform.localEulerAngles.x;
+            // if (head.transform.localEulerAngles.z > 0.1f)
+            // {
+            //     yaw -= 180.0f;
+            //     pitch = -(pitch - 180);
+            // }
+
+            Debug.Log("before" + new Vector2(yaw, pitch));
+            cnt_speed += cnt_speed * control_cycle_time;
+            yaw += cnt_speed.x * control_cycle_time;
+            pitch += cnt_speed.y * control_cycle_time;
+            // yaw = (yaw + 540) % 360 - 180;
+            // pitch = (pitch + 540) % 360 - 180;
+            // if (pitch > 90) pitch = 90;
+            // if (pitch < -90) pitch = -90;
+            Debug.Log("cnt" + new Vector2(yaw, pitch));
+            // head.transform.rotation =
+            //     Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(pitch, Vector3.right);
+
+            var rotation_head = Quaternion.Euler(yaw, pitch, 0);
+            head.localRotation = rotation_head;
+        }
+    }
+
+    private IEnumerator innerPID()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(control_cycle_time);
+            if (control_mode != "remote_control_mode") continue;
+            double cnt_yaw = head.transform.localEulerAngles.y;
+            double cnt_pitch = head.transform.localEulerAngles.x;
+            if (gameObject.transform.localEulerAngles.z > 0.1f)
+            {
+                cnt_yaw -= 180.0f;
+                cnt_pitch = -(cnt_pitch - 180);
+            }
+
+            var error_yaw = targetPosition.x - cnt_yaw;
+            error_yaw = (error_yaw + 540) % 360 - 180;
+            var error_pitch = targetPosition.y - cnt_pitch;
+            error_pitch = (error_pitch + 540) % 360 - 180;
+            //Debug.Log("error" + new Vector2((float)error_yaw, (float)error_pitch));
+            var set_yaw_acc = yaw_kp * error_yaw + yaw_ki * yaw_accumulate_error +
+                              yaw_kd * (error_yaw - yaw_last_error);
+            var set_pitch_acc = pitch_kp * error_pitch + pitch_ki * pitch_accumulate_error +
+                                pitch_kd * (error_pitch - pitch_last_error);
+
+            yaw_accumulate_error += error_yaw;
+            if (Math.Abs(yaw_accumulate_error) > max_yaw_accmulate_error)
+            {
+                if (yaw_accumulate_error < 0)
+                    yaw_accumulate_error = -max_yaw_accmulate_error;
+                else
+                    yaw_accumulate_error = max_yaw_accmulate_error;
+            }
+
+            pitch_accumulate_error += error_pitch;
+            if (Math.Abs(pitch_accumulate_error) > max_pitch_accmulate_error)
+            {
+                if (pitch_accumulate_error < 0)
+                    pitch_accumulate_error = -max_pitch_accmulate_error;
+                else
+                    pitch_accumulate_error = max_pitch_accmulate_error;
+            }
+
+            yaw_last_error = error_yaw;
+            pitch_last_error = error_pitch;
+
+            targetSpeed = new Vector2((float)set_yaw_acc, (float)set_pitch_acc);
+        }
+    }
+
+    private IEnumerator outerPID()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(control_cycle_time);
+            if (control_mode != "remote_control_mode") continue;
+
+            var cntSpeed = cnt_speed;
+            double error_yaw = targetSpeed.x - cntSpeed.x;
+            double error_pitch = targetSpeed.y - cntSpeed.y;
+            var set_yaw_acc = Ayaw_kp * error_yaw + Ayaw_ki * Ayaw_accumulate_error +
+                              Ayaw_kd * (error_yaw - Ayaw_last_error);
+            var set_pitch_acc = Apitch_kp * error_pitch + Apitch_ki * Apitch_accumulate_error +
+                                Apitch_kd * (error_pitch - Apitch_last_error);
+
+            Ayaw_accumulate_error += error_yaw;
+            if (Math.Abs(Ayaw_accumulate_error) > Amax_yaw_accmulate_error)
+            {
+                if (Ayaw_accumulate_error < 0)
+                    Ayaw_accumulate_error = -Amax_yaw_accmulate_error;
+                else
+                    Ayaw_accumulate_error = Amax_yaw_accmulate_error;
+            }
+
+            Apitch_accumulate_error += error_pitch;
+            if (Math.Abs(Apitch_accumulate_error) > Amax_pitch_accmulate_error)
+            {
+                if (Apitch_accumulate_error < 0)
+                    Apitch_accumulate_error = -Amax_pitch_accmulate_error;
+                else
+                    Apitch_accumulate_error = Amax_pitch_accmulate_error;
+            }
+
+            Ayaw_last_error = error_yaw;
+            Apitch_last_error = error_pitch;
+
+            UpdateAccSpeed(new Vector2((float)set_yaw_acc, (float)set_pitch_acc));
+        }
     }
 
     public Vector3 get_head_position()
@@ -146,7 +296,6 @@ public class CarControler : RoboControler
 
     public void act_vertical_and_horizontal(float forwardInput, float horizontalinput)
     {
-      
         //还在有一些小问题，但是已经不重要了
 
         for (var i = 0; i < wheelColliders.Length; i++)
@@ -325,13 +474,13 @@ public class CarControler : RoboControler
         //chassis.localRotation = rotation_chassis;
     }
 
-    public void move_to_aw_pich_direct(float yaw, float pitch)
-    {
-        var filteredYaw = yawFilter.Update(yaw);
-        var filteredPitch = pitchFilter.Update(pitch);
-        var rotation_head = Quaternion.Euler(filteredYaw, filteredPitch, 0);
-        head.localRotation = rotation_head;
-    }
+    // public void move_to_aw_pich_direct(float yaw, float pitch)
+    // {
+    //     var filteredYaw = yawFilter.Update(yaw);
+    //     var filteredPitch = pitchFilter.Update(pitch);
+    //     var rotation_head = Quaternion.Euler(filteredYaw, filteredPitch, 0);
+    //     head.localRotation = rotation_head;
+
 
     public float get_head_pitch()
     {
@@ -343,6 +492,54 @@ public class CarControler : RoboControler
         return head.localRotation.eulerAngles.y;
     }
 
+    public void UpdateSpeed(Vector2 newSpeed)
+    {
+        cnt_speed = newSpeed;
+    }
+
+    public Vector2 GetSpeed()
+    {
+        return cnt_speed;
+    }
+
+    public Vector2 UpdateAccSpeed(Vector2 newAccSpeed)
+    {
+        cnt_speed = newAccSpeed;
+        return cnt_accSpeed;
+    }
+
+    public Vector2 GetAccSpeed()
+    {
+        var u1 = new System.Random().NextDouble();
+        var u2 = new System.Random().NextDouble();
+        var z = Math.Sqrt(-2 * Math.Log(u1)) * Math.Sin(2 * Math.PI * u2);
+        return cnt_accSpeed * 1 / (1 + (float)z / 10);
+    }
+
+    public Vector2 SetTargetPosition(Vector2 newTargetPosition)
+    {
+        var signal = newTargetPosition.y > 0 ? 1 : -1;
+
+        newTargetPosition.y = Mathf.Abs(newTargetPosition.y) > LimitPitch ? signal * LimitPitch : newTargetPosition.y;
+        targetPosition = newTargetPosition;
+        return targetPosition;
+    }
+
+    public Vector2 GetTargetPosition()
+    {
+        return targetPosition;
+    }
+
+    public Vector2 SetTargetSpeed(Vector2 newTargetSpeed)
+    {
+        targetSpeed = newTargetSpeed;
+        return newTargetSpeed;
+    }
+
+    public Vector2 GetTargetSpeed()
+    {
+        return targetSpeed;
+    }
 
     public void Reset_Rotation()
     {
@@ -373,38 +570,30 @@ public class CarControler : RoboControler
         this.state = state;
         this.state.enter_state();
     }
-    
+
     public void change_light_bar_color(string color)
     {
-        
-        
         switch (color)
         {
             case "blue":
                 this.color = color;
-                
 
-                for (int i = 0; i < this.light_bars.Count; i++)
-                {
-                
-                    this.light_bars[i].gameObject.GetComponent<Renderer>().material = materials[0];
-                }
+
+                for (var i = 0; i < light_bars.Count; i++)
+                    light_bars[i].gameObject.GetComponent<Renderer>().material = materials[0];
                 break;
             case "red":
 
                 this.color = color;
-                for (int i = 0; i < this.light_bars.Count; i++)
-                {
-                    this.light_bars[i].gameObject.GetComponent<Renderer>().material = materials[1];
-                }
-                
+                for (var i = 0; i < light_bars.Count; i++)
+                    light_bars[i].gameObject.GetComponent<Renderer>().material = materials[1];
+
                 break;
-            
+
             default:
-                Debug.LogWarning("没有对应的材质:"+ color);
-                
+                Debug.LogWarning("没有对应的材质:" + color);
+
                 break;
-            
         }
     }
 }
