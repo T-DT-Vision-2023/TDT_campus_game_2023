@@ -5,6 +5,7 @@ using Code.RobotControler;
 using Code.RobotControler.RobotState;
 using Code.RobotControler.Senser;
 using Code.util;
+using Unity.Mathematics;
 using Unity.VisualScripting;
 using UnityEngine;
 using FixedUpdate = UnityEngine.PlayerLoop.FixedUpdate;
@@ -63,8 +64,8 @@ public class CarControler : RoboControler
     public float control_cycle_time;
     public float LimitPitch = 70.0f;
 
-    private Vector2 cnt_speed;
-    private Vector2 cnt_accSpeed;
+    private Vector2 cnt_speed = Vector2.zero;
+    private Vector2 cnt_accSpeed = Vector2.zero;
 
 
     public Transform head;
@@ -175,28 +176,29 @@ public class CarControler : RoboControler
         {
             yield return new WaitForSeconds(control_cycle_time);
             if (control_mode != "remote_control_mode") continue;
-            var yaw = head.transform.localEulerAngles.y;
-            var pitch = head.transform.localEulerAngles.x;
-            // if (head.transform.localEulerAngles.z > 0.1f)
-            // {
-            //     yaw -= 180.0f;
-            //     pitch = -(pitch - 180);
-            // }
+            var yaw = head.transform.eulerAngles.y;
+            var pitch = head.transform.eulerAngles.x;
+            var roll = head.transform.eulerAngles.z;
+            roll = (roll % 360 + 540) % 360 - 180;
+            if (math.abs(roll) > 10.0f)
+            {
+                yaw -= 180.0f;
+                pitch = -(pitch - 180);
+            }
 
-            Debug.Log("before" + new Vector2(yaw, pitch));
-            cnt_speed += cnt_speed * control_cycle_time;
+            // Debug.Log("before" + new Vector2(yaw, pitch));
+            cnt_speed += cnt_accSpeed * control_cycle_time;
             yaw += cnt_speed.x * control_cycle_time;
             pitch += cnt_speed.y * control_cycle_time;
-            // yaw = (yaw + 540) % 360 - 180;
-            // pitch = (pitch + 540) % 360 - 180;
-            // if (pitch > 90) pitch = 90;
-            // if (pitch < -90) pitch = -90;
-            Debug.Log("cnt" + new Vector2(yaw, pitch));
+            yaw = (yaw % 360 + 540) % 360 - 180;
+            pitch = (pitch % 360 + 540) % 360 - 180;
+            if (pitch > 70) pitch = 70;
+            if (pitch < -70) pitch = -70;
+            // Debug.Log("cnt" + new Vector2(yaw, pitch));
             // head.transform.rotation =
             //     Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(pitch, Vector3.right);
-
-            var rotation_head = Quaternion.Euler(yaw, pitch, 0);
-            head.localRotation = rotation_head;
+            Debug.Log(head.localRotation.eulerAngles);
+            head.transform.eulerAngles = new Vector3(pitch, yaw, 0);
         }
     }
 
@@ -206,18 +208,18 @@ public class CarControler : RoboControler
         {
             yield return new WaitForSeconds(control_cycle_time);
             if (control_mode != "remote_control_mode") continue;
-            double cnt_yaw = head.transform.localEulerAngles.y;
-            double cnt_pitch = head.transform.localEulerAngles.x;
-            if (gameObject.transform.localEulerAngles.z > 0.1f)
+            double cnt_yaw = head.transform.eulerAngles.y;
+            double cnt_pitch = head.transform.eulerAngles.x;
+            if (head.transform.eulerAngles.z > 0.1f)
             {
                 cnt_yaw -= 180.0f;
                 cnt_pitch = -(cnt_pitch - 180);
             }
 
             var error_yaw = targetPosition.x - cnt_yaw;
-            error_yaw = (error_yaw + 540) % 360 - 180;
+            error_yaw = (error_yaw % 360 + 540) % 360 - 180;
             var error_pitch = targetPosition.y - cnt_pitch;
-            error_pitch = (error_pitch + 540) % 360 - 180;
+            error_pitch = (error_pitch % 360 + 540) % 360 - 180;
             //Debug.Log("error" + new Vector2((float)error_yaw, (float)error_pitch));
             var set_yaw_acc = yaw_kp * error_yaw + yaw_ki * yaw_accumulate_error +
                               yaw_kd * (error_yaw - yaw_last_error);
@@ -492,19 +494,9 @@ public class CarControler : RoboControler
         return head.localRotation.eulerAngles.y;
     }
 
-    public void UpdateSpeed(Vector2 newSpeed)
-    {
-        cnt_speed = newSpeed;
-    }
-
-    public Vector2 GetSpeed()
-    {
-        return cnt_speed;
-    }
-
     public Vector2 UpdateAccSpeed(Vector2 newAccSpeed)
     {
-        cnt_speed = newAccSpeed;
+        cnt_accSpeed = newAccSpeed;
         return cnt_accSpeed;
     }
 
