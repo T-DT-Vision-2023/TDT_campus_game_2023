@@ -2,6 +2,7 @@ using Code.RobotControler.Senser;
 using UnityEngine;
 
 using Code.util;
+using Network;
 
 namespace Code.RobotControler.RobotState
 {
@@ -91,6 +92,11 @@ namespace Code.RobotControler.RobotState
                             }
 
                         }
+                        
+                        //设置当前ywa pitch不为0：
+
+                        GameManager.receivedData.Yaw = this.camera.car.head.localRotation.eulerAngles.y;
+                        GameManager.receivedData.Pitch = this.camera.car.head.localRotation.eulerAngles.x;
 
 
                         break;
@@ -130,6 +136,8 @@ namespace Code.RobotControler.RobotState
                                     this.camera.transform.rotation);
                                 temp_bullet.GetComponent<Rigidbody>().velocity = this.camera.transform.forward * 28.0f;
                                 UnityEngine.GameObject.Destroy(temp_bullet, 5);
+                                this.camera.car.bullet_num--;
+                                
                             }
 
                         }
@@ -137,9 +145,8 @@ namespace Code.RobotControler.RobotState
                         //设置最新消息
                         //这个地方的设计理念是，谁修改了谁自己管
 
-                        Network.GameManager.sendData.TimeStamp = Time.time;
-                        Network.GameManager.sendData.Yaw = this.camera.car.get_head_yaw();
-                        Network.GameManager.sendData.Pitch = this.camera.car.get_head_pitch();
+                        
+                       
 
                         if (this.camera.car.color=="blue")
                         {
@@ -154,6 +161,11 @@ namespace Code.RobotControler.RobotState
                         break;
 
                 }
+                
+                Network.GameManager.sendData.TimeStamp = Time.realtimeSinceStartup;
+                Network.GameManager.sendData.Yaw = this.camera.car.get_head_yaw();
+                Network.GameManager.sendData.Pitch = this.camera.car.get_head_pitch();
+                Network.GameManager.sendData.RestBullets = this.camera.car.bullet_num;
 
 
                 //连续三次按下快捷键弹出车辆
@@ -208,10 +220,12 @@ namespace Code.RobotControler.RobotState
                 if (this.control_mode == "player_mode")
                 {
                     this.control_mode = "remote_control_mode";
+                    Network.GameManager.enter_control();
                 }
                 else
                 {
                     this.control_mode = "player_mode";
+                    Network.GameManager.quit_control();
                 }
 
             }

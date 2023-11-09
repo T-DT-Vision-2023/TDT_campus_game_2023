@@ -53,8 +53,9 @@ public class CarControler : RoboControler
 
     private float rotationInput;
     private float Angle = 0.0f;
-    public int little_bullet_damage = 10;
-    
+    public float little_bullet_damage = 10;
+    public int bullet_num = 300;
+    public float attack_rate = 1.0f;
     public string control_mode = "player_mode";
     
     public string color = "blue";
@@ -359,7 +360,7 @@ public class CarControler : RoboControler
     }
 
 
-    public void change_blood(int value)
+    public void change_blood(float value)
     {
         blood += value;
         Healthbar_controler.SetHealth((int)blood);

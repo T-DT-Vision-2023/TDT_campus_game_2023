@@ -27,7 +27,8 @@ namespace Code.RobotControler.RobotState
     
         public override void be_atacked()
         {
-           this._controler.change_blood(-this._controler.little_bullet_damage);
+           this._controler.change_blood(-(this._controler.little_bullet_damage*this._controler.attack_rate));
+           Network.GameManager.change_score((this._controler.little_bullet_damage*this._controler.attack_rate));
         }
 
         public override void On_update()

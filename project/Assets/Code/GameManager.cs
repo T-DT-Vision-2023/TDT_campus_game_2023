@@ -10,6 +10,8 @@ using UnityEngine.Rendering;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Threading;
+using TMPro;
+using UnityEngine.UI;
 
 
 namespace Network
@@ -73,11 +75,34 @@ namespace Network
         
         
         
+        //ui
+
+        public TMP_Text tip_text;
+
+        public static float in_time = 0;
+
+        public static float out_time = 0;
+
+        public static bool control_state = false;
+
+        public static bool game_mode = false;
+
+        public static float time_total = 0;
         
+        //score
 
+        private static float score = 0;
+        
+        // game
 
+        public GameObject buff;
+        public GameObject buff_base;
+        
+        
         private void Start()
         {
+            
+            
             /*Resolution[] resolutions = Screen.resolutions;
             //设置当前分辨率
             Screen.SetResolution(resolutions[resolutions.Length - 1].width, resolutions[resolutions.Length - 1].height, true);
@@ -112,6 +137,21 @@ namespace Network
             if (Input.GetMouseButtonDown(0)) Cursor.lockState = CursorLockMode.Locked;
 
             if (registeed) SendMessage();
+            
+            //update UI
+            if (control_state)
+            {
+                tip_text.text = "Time:"+(sendData.TimeStamp-in_time+time_total)+"\n score:"+score;
+            
+                game_score_manage();
+                
+            }
+            
+            
+            // UI data score 
+            
+            
+            
         }
 
         private IEnumerator ReceiveMessagesCoroutine()
@@ -207,7 +247,7 @@ namespace Network
         private IEnumerator CaptureAndSendImage()
         {
             
-            float startTime = Time.realtimeSinceStartup;
+            
             while (true)
             {
                 if (trans_frame & registeed)
@@ -269,6 +309,40 @@ namespace Network
 
                 pushSocket.TrySendFrame(json.ToString());
             }
+        }
+
+        public static void enter_control()
+        {
+            in_time = sendData.TimeStamp;
+
+            control_state = !control_state;
+        }
+
+        public static void quit_control()
+        {
+            out_time = sendData.TimeStamp;
+
+            time_total += sendData.TimeStamp - in_time;
+            
+            control_state = !control_state;
+            
+        }
+
+        public void game_score_manage()
+        {
+            if ((sendData.TimeStamp-in_time+time_total)>30)
+            {
+                //解算大符分数
+                this.buff.SetActive(false);
+                this.buff_base.SetActive(false);
+            }
+            
+        }
+
+        public static void change_score(float score_add)
+        {
+            score += score_add;
+            
         }
 
 

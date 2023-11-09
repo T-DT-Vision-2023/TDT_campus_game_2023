@@ -35,6 +35,7 @@ namespace Code.RobotControler.RobotState
             {
                 Debug.Log(buffcontroler.bufffans.Length);
                 Debug.LogWarning("all active!");
+                Network.GameManager.change_score(300);
             }
             else
             {
@@ -109,7 +110,10 @@ namespace Code.RobotControler.RobotState
                 buffcontroler.bufffans[temp_num].enter_target_mode();
 
                 timecounter_fortarget = 0;
+                
+               
             }
+        
         }
 
 
